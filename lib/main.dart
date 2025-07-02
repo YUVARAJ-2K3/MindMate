@@ -27,6 +27,41 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
+  bool _obscureText = true;
+  bool _isEmailFocused = false;
+  bool _isPasswordFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailFocusNode.addListener(() {
+      setState(() {
+        _isEmailFocused = _emailFocusNode.hasFocus;
+      });
+    });
+    _passwordFocusNode.addListener(() {
+      setState(() {
+        _isPasswordFocused = _passwordFocusNode.hasFocus;
+      });
+    });
+    _emailController.addListener(() {
+      setState(() {});
+    });
+    _passwordController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   void _login() {
     if (_formKey.currentState!.validate()) {
@@ -81,8 +116,9 @@ class _LoginPageState extends State<LoginPage> {
                     // Email
                     TextFormField(
                       controller: _emailController,
+                      focusNode: _emailFocusNode,
                       decoration: InputDecoration(
-                        labelText: 'Email',
+                        labelText: (!_isEmailFocused && _emailController.text.isEmpty) ? 'Email' : '',
                         prefixIcon: const Icon(Icons.email, color: Color(0xFFEA8C6E)),
                         filled: true,
                         fillColor: Colors.white,
@@ -106,9 +142,10 @@ class _LoginPageState extends State<LoginPage> {
                     // Password
                     TextFormField(
                       controller: _passwordController,
-                      obscureText: true,
+                      focusNode: _passwordFocusNode,
+                      obscureText: _obscureText,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: (!_isPasswordFocused && _passwordController.text.isEmpty) ? 'Password' : '',
                         prefixIcon: const Icon(Icons.lock, color: Color(0xFFEA8C6E)),
                         filled: true,
                         fillColor: Colors.white,
@@ -116,7 +153,17 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        contentPadding: EdgeInsets.only(top: 30),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureText ? Icons.visibility_off : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureText = !_obscureText;
+                            });
+                          },
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -159,7 +206,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: const Text(
                     'Get Started',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
               ),
@@ -193,21 +240,16 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
               // Google Sign-In Button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: Image.asset('assets/google.png', height: 24),
-                  label: const Text(
-                    'Sign in with Google',
-                    style: TextStyle(color: Color(0xFF2D2D2D), fontWeight: FontWeight.bold),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFE0B8A4)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
+              GestureDetector(
+                onTap: () {
+                  // Handle Google sign-in
+                },
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/google.png',
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
