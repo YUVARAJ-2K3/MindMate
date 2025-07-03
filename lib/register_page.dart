@@ -27,16 +27,35 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
+      String email = _emailController.text.trim();
+      String username = email.split('@')[0];
+      // Check if username already exists in Firestore
+      var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+      if (userDoc.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Already User exits, so use sign in.')),
+        );
+        return;
+      }
       try {
+        // Try to register in Firebase Auth
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
+          email: email,
           password: _passwordController.text.trim(),
         );
+        // Only if registration succeeds, write to Firestore
+        await FirebaseFirestore.instance.collection('users').doc(username).set({
+          'username': username,
+          'email': email,
+          'name': _nameController.text.trim(),
+          'provider': 'email',
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registration successful!')),
         );
         Navigator.pop(context); // Go back to login
       } on FirebaseAuthException catch (e) {
+        // Show error from Firebase Auth (e.g., email already in use)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message ?? 'Registration failed')),
         );
@@ -248,14 +267,22 @@ class _RegisterPageState extends State<RegisterPage> {
                     UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
                     User? user = userCredential.user;
                     if (user != null) {
-                      // Store user data in Firestore
-                      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+                      String username = user.email!.split('@')[0];
+                      // Check if username already exists
+                      var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+                      if (userDoc.exists) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Already there, use sign in.')),
+                        );
+                        return;
+                      }
+                      await FirebaseFirestore.instance.collection('users').doc(username).set({
                         'uid': user.uid,
                         'name': user.displayName ?? '',
                         'email': user.email ?? '',
                         'photoURL': user.photoURL ?? '',
                         'provider': 'google',
-                      }, SetOptions(merge: true));
+                      });
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Google registration successful!')),
                       );

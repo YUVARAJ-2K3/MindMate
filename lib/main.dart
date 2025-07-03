@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'register_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'homepage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,9 +48,19 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
+      String email = _emailController.text.trim();
+      String username = email.split('@')[0];
       try {
+        // Check if username exists in Firestore
+        var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+        if (!userDoc.exists) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('User not found, please register.')),
+          );
+          return;
+        }
         await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
+          email: email,
           password: _passwordController.text.trim(),
         );
         // Navigate to home or show success
