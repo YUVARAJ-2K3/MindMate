@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,16 +15,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String? _selectedAgeGroup;
   bool _obscureText = true;
-
-  final List<String> _ageGroups = [
-    'Teenagers (13-17)',
-    'Young adults (18-24)',
-    'Adults (25-34)',
-    'Mid-aged (35-54)',
-    'Seniors (55 & above)',
-  ];
 
   @override
   void dispose() {
@@ -124,43 +117,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         }
                         return null;
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    // Age Group Dropdown
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedAgeGroup,
-                        isExpanded: true,
-                        items: _ageGroups
-                            .map((age) => DropdownMenuItem(
-                                  value: age,
-                                  child: Text(age),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedAgeGroup = value;
-                          });
-                        },
-                        hint: const Text('Age Group'),
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.cake, color: Color(0xFFEA8C6E)),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.only(left: 16, right: 24, top: 0, bottom: 0),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select your age group';
-                          }
-                          return null;
-                        },
-                      ),
                     ),
                     const SizedBox(height: 16),
                     // Email
@@ -277,8 +233,39 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               // Google Sign-In Button
               GestureDetector(
-                onTap: () {
-                  // Handle Google sign-in
+                onTap: () async {
+                  try {
+                    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+                    if (googleUser == null) {
+                      // User cancelled the sign-in
+                      return;
+                    }
+                    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+                    final credential = GoogleAuthProvider.credential(
+                      accessToken: googleAuth.accessToken,
+                      idToken: googleAuth.idToken,
+                    );
+                    UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+                    User? user = userCredential.user;
+                    if (user != null) {
+                      // Store user data in Firestore
+                      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+                        'uid': user.uid,
+                        'name': user.displayName ?? '',
+                        'email': user.email ?? '',
+                        'photoURL': user.photoURL ?? '',
+                        'provider': 'google',
+                      }, SetOptions(merge: true));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Google registration successful!')),
+                      );
+                      Navigator.pop(context); // Go back to login or home
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Google sign-in failed: $e')),
+                    );
+                  }
                 },
                 child: ClipOval(
                   child: Image.asset(

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "732886401439-hbtq5d4s43q4rqoftk3b2mtd0jtclhjb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.oneandwon.mindmate",
+            "certificate_hash": "e517291c5379a7dcb34be6765bb0b9f205a409ac"
+          }
+        },
+        {
           "client_id": "732886401439-mimubdtoqil7aiu2pn19qet25fr8k1re.apps.googleusercontent.com",
           "client_type": 3
         }
