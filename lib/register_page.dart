@@ -1,63 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'register_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Login Page',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const LoginPage(),
-    );
-  }
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  String? _selectedAgeGroup;
   bool _obscureText = true;
+
+  final List<String> _ageGroups = [
+    'Teenagers (13-17)',
+    'Young adults (18-24)',
+    'Adults (25-34)',
+    'Mid-aged (35-54)',
+    'Seniors (55 & above)',
+  ];
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _login() async {
+  void _register() async {
     if (_formKey.currentState!.validate()) {
       try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
-        // Navigate to home or show success
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login successful!')),
+          SnackBar(content: Text('Registration successful!')),
         );
+        Navigator.pop(context); // Go back to login
       } on FirebaseAuthException catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Login failed')),
+          SnackBar(content: Text(e.message ?? 'Registration failed')),
         );
       }
     }
@@ -102,6 +91,17 @@ class _LoginPageState extends State<LoginPage> {
                 'assets/logo.png',
                 height: 80,
               ),
+              const SizedBox(height: 8),
+              // App Name
+              const Text(
+                'MINDMATE',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
               const SizedBox(height: 16),
               // Title
               const Text(
@@ -129,6 +129,65 @@ class _LoginPageState extends State<LoginPage> {
                 key: _formKey,
                 child: Column(
                   children: [
+                    // Name
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        hintText: 'Name',
+                        prefixIcon: const Icon(Icons.person, color: Color(0xFFEA8C6E)),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Age Group Dropdown
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedAgeGroup,
+                        isExpanded: true,
+                        items: _ageGroups
+                            .map((age) => DropdownMenuItem(
+                                  value: age,
+                                  child: Text(age),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedAgeGroup = value;
+                          });
+                        },
+                        hint: const Text('Age Group'),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.cake, color: Color(0xFFEA8C6E)),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.only(left: 16, right: 24, top: 0, bottom: 0),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select your age group';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     // Email
                     TextFormField(
                       controller: _emailController,
@@ -192,44 +251,13 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              // Forgot Password
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () async {
-                    if (_emailController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Please enter your email first')),
-                      );
-                      return;
-                    }
-                    try {
-                      await FirebaseAuth.instance.sendPasswordResetEmail(
-                        email: _emailController.text.trim(),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Password reset email sent!')),
-                      );
-                    } on FirebaseAuthException catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.message ?? 'Error sending reset email')),
-                      );
-                    }
-                  },
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Color(0xFF7B7B7B)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Get Started Button
+              const SizedBox(height: 24),
+              // Register Button
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _login,
+                  onPressed: _register,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEA8C6E),
                     shape: RoundedRectangleBorder(
@@ -238,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                     elevation: 0,
                   ),
                   child: const Text(
-                    'Get Started',
+                    'Register',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -289,16 +317,13 @@ class _LoginPageState extends State<LoginPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account? ", style: TextStyle(color: Color(0xFF7B7B7B))),
+                  const Text("Have an account ? ", style: TextStyle(color: Color(0xFF7B7B7B))),
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RegisterPage()),
-                      );
+                      Navigator.pop(context);
                     },
                     child: const Text(
-                      'Sign Up',
+                      'Sign in',
                       style: TextStyle(
                         color: Color(0xFFEA8C6E),
                         fontWeight: FontWeight.bold,
@@ -313,4 +338,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-}
+} 

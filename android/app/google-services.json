@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "732886401439",
+    "project_id": "mindmate-9c2e1",
+    "storage_bucket": "mindmate-9c2e1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:732886401439:android:94d4de8dd9e7d9658b3daa",
+        "android_client_info": {
+          "package_name": "com.oneandwon.mindmate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "732886401439-mimubdtoqil7aiu2pn19qet25fr8k1re.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLLqqvTqt6Rs2Z5WRWRiT4u1wt5Za2NbE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "732886401439-mimubdtoqil7aiu2pn19qet25fr8k1re.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "732886401439-ed9cfovposiu6adqmh2vv5bht29p53rl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.oneandwon.mindmate"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
