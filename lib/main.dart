@@ -53,6 +53,53 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  // Reusable custom SnackBar function
+  void showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    IconData icon = Icons.info_outline,
+    Color backgroundColor = const Color(0xFFDA8D7A),
+    String actionLabel = 'Dismiss',
+    VoidCallback? onAction,
+  }) {
+    final width = MediaQuery.of(context).size.width;
+    final margin = width > 600
+        ? EdgeInsets.symmetric(horizontal: width * 0.3, vertical: 16)
+        : EdgeInsets.symmetric(horizontal: width * 0.05, vertical: 16);
+
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor,
+      behavior: SnackBarBehavior.floating,
+      margin: margin,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      duration: const Duration(seconds: 3),
+      action: SnackBarAction(
+        label: actionLabel,
+        textColor: Colors.white,
+        onPressed: onAction ?? () {},
+      ),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   void _login() async {
     if (_formKey.currentState!.validate()) {
       String email = _emailController.text.trim();
@@ -60,9 +107,7 @@ class _LoginPageState extends State<LoginPage> {
         // Use centralized user existence check
         bool exists = await _userExists(email);
         if (!exists) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('User not found, please register.')),
-          );
+          showCustomSnackBar(context, 'User not found, please register.', icon: Icons.info_outline);
           return;
         }
         await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -75,9 +120,7 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
       } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Login failed')),
-        );
+        showCustomSnackBar(context, e.message ?? 'Login failed', icon: Icons.error_outline);
       }
     }
   }
@@ -100,9 +143,7 @@ class _LoginPageState extends State<LoginPage> {
         // Use centralized user existence check
         bool exists = await _userExists(user.email!);
         if (!exists) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('User not found, please register.')),
-          );
+          showCustomSnackBar(context, 'User not found, please register.', icon: Icons.info_outline);
           return;
         }
         // Redirect to HomePage after successful sign-in
@@ -112,9 +153,7 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google sign-in failed: $e')),
-      );
+      showCustomSnackBar(context, 'Google sign-in failed: $e', icon: Icons.error_outline);
     }
   }
 
@@ -230,22 +269,16 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextButton(
                   onPressed: () async {
                     if (_emailController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Please enter your email first')),
-                      );
+                      showCustomSnackBar(context, 'Please enter your email first', icon: Icons.info_outline);
                       return;
                     }
                     try {
                       await FirebaseAuth.instance.sendPasswordResetEmail(
                         email: _emailController.text.trim(),
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Password reset email sent!')),
-                      );
+                      showCustomSnackBar(context, 'Password reset email sent!', icon: Icons.check_circle_outline);
                     } on FirebaseAuthException catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.message ?? 'Error sending reset email')),
-                      );
+                      showCustomSnackBar(context, e.message ?? 'Error sending reset email', icon: Icons.error_outline);
                     }
                   },
                   child: const Text(
