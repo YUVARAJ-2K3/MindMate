@@ -39,6 +39,13 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
 
+  // Helper function to check if user exists in Firestore by username
+  Future<bool> _userExists(String email) async {
+    String username = email.split('@')[0];
+    var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+    return userDoc.exists;
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -49,11 +56,10 @@ class _LoginPageState extends State<LoginPage> {
   void _login() async {
     if (_formKey.currentState!.validate()) {
       String email = _emailController.text.trim();
-      String username = email.split('@')[0];
       try {
-        // Check if username exists in Firestore
-        var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
-        if (!userDoc.exists) {
+        // Use centralized user existence check
+        bool exists = await _userExists(email);
+        if (!exists) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('User not found, please register.')),
           );
@@ -91,10 +97,9 @@ class _LoginPageState extends State<LoginPage> {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       User? user = userCredential.user;
       if (user != null) {
-        String username = user.email!.split('@')[0];
-        // Check if username exists in Firestore
-        var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
-        if (!userDoc.exists) {
+        // Use centralized user existence check
+        bool exists = await _userExists(user.email!);
+        if (!exists) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('User not found, please register.')),
           );

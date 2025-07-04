@@ -17,6 +17,13 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
 
+  // Helper function to check if user exists in Firestore by username
+  Future<bool> _userExists(String email) async {
+    String username = email.split('@')[0];
+    var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+    return userDoc.exists;
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -29,9 +36,9 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       String email = _emailController.text.trim();
       String username = email.split('@')[0];
-      // Check if username already exists in Firestore
-      var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
-      if (userDoc.exists) {
+      // Use centralized user existence check
+      bool exists = await _userExists(email);
+      if (exists) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Already User exits, so use sign in.')),
         );
@@ -45,7 +52,6 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         // Only if registration succeeds, write to Firestore
         await FirebaseFirestore.instance.collection('users').doc(username).set({
-          'username': username,
           'email': email,
           'name': _nameController.text.trim(),
           'provider': 'email',
@@ -267,12 +273,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
                     User? user = userCredential.user;
                     if (user != null) {
+                      // Use centralized user existence check
+                      bool exists = await _userExists(user.email!);
                       String username = user.email!.split('@')[0];
-                      // Check if username already exists
-                      var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
-                      if (userDoc.exists) {
+                      if (exists) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Already there, use sign in.')),
+                          SnackBar(content: Text('User already exists, use Google sign in.')),
                         );
                         return;
                       }
