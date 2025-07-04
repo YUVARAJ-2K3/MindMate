@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'homepage.dart';
+import 'regfav.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'custom_snackbar.dart';
@@ -72,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
         // Navigate to home or show success
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const RegFavPage()),
         );
       } on FirebaseAuthException catch (e) {
         showCustomSnackBar(context, e.message ?? 'Login failed', icon: Icons.error_outline);
@@ -104,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
         // Redirect to HomePage after successful sign-in
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const RegFavPage()),
         );
       }
     } catch (e) {
