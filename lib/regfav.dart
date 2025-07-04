@@ -96,7 +96,7 @@ class _RegFavPageState extends State<RegFavPage> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(16)),
                           borderSide: BorderSide(
-                            color: Color(0xFFD39C7B),
+                            color: Color(0xFFDA8D7A),
                             width: 2,
                           ),
                         ),
@@ -107,7 +107,7 @@ class _RegFavPageState extends State<RegFavPage> {
                 Center(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD39C7B),
+                      backgroundColor: const Color(0xFFDA8D7A),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),

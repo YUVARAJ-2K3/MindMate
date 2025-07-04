@@ -44,7 +44,10 @@ class _LoginPageState extends State<LoginPage> {
   // Helper function to check if user exists in Firestore by username
   Future<bool> _userExists(String email) async {
     String username = email.split('@')[0];
-    var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+    var userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(username)
+        .get();
     return userDoc.exists;
   }
 
@@ -62,7 +65,11 @@ class _LoginPageState extends State<LoginPage> {
         // Use centralized user existence check
         bool exists = await _userExists(email);
         if (!exists) {
-          showCustomSnackBar(context, 'User not found, please register.', icon: Icons.info_outline);
+          showCustomSnackBar(
+            context,
+            'User not found, please register.',
+            icon: Icons.info_outline,
+          );
           return;
         }
         await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -75,7 +82,11 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => const RegFavPage()),
         );
       } on FirebaseAuthException catch (e) {
-        showCustomSnackBar(context, e.message ?? 'Login failed', icon: Icons.error_outline);
+        showCustomSnackBar(
+          context,
+          e.message ?? 'Login failed',
+          icon: Icons.error_outline,
+        );
       }
     }
   }
@@ -87,18 +98,24 @@ class _LoginPageState extends State<LoginPage> {
         // User cancelled the sign-in
         return;
       }
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
       User? user = userCredential.user;
       if (user != null) {
         // Use centralized user existence check
         bool exists = await _userExists(user.email!);
         if (!exists) {
-          showCustomSnackBar(context, 'User not found, please register.', icon: Icons.info_outline);
+          showCustomSnackBar(
+            context,
+            'User not found, please register.',
+            icon: Icons.info_outline,
+          );
           return;
         }
         // Redirect to HomePage after successful sign-in
@@ -108,7 +125,11 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      showCustomSnackBar(context, 'Google sign-in failed: $e', icon: Icons.error_outline);
+      showCustomSnackBar(
+        context,
+        'Google sign-in failed: $e',
+        icon: Icons.error_outline,
+      );
     }
   }
 
@@ -123,10 +144,7 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Logo
-              Image.asset(
-                'assets/logo.png',
-                height: 80,
-              ),
+              Image.asset('assets/logo.png', height: 80),
               const SizedBox(height: 16),
               // Title
               const Text(
@@ -143,10 +161,7 @@ class _LoginPageState extends State<LoginPage> {
               const Text(
                 "Every journey to peace begins with a single step. Let's take it together.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF7B7B7B),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF7B7B7B)),
               ),
               const SizedBox(height: 24),
               // Form
@@ -159,14 +174,20 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _emailController,
                       decoration: InputDecoration(
                         hintText: 'Email',
-                        prefixIcon: const Icon(Icons.email, color: Color(0xFFEA8C6E)),
+                        prefixIcon: const Icon(
+                          Icons.email,
+                          color: Color(0xFFEA8C6E),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0,
+                          horizontal: 16,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -185,17 +206,25 @@ class _LoginPageState extends State<LoginPage> {
                       obscureText: _obscureText,
                       decoration: InputDecoration(
                         hintText: 'Password',
-                        prefixIcon: const Icon(Icons.lock, color: Color(0xFFEA8C6E)),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Color(0xFFEA8C6E),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0,
+                          horizontal: 16,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureText ? Icons.visibility_off : Icons.visibility,
+                            _obscureText
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -224,16 +253,28 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextButton(
                   onPressed: () async {
                     if (_emailController.text.isEmpty) {
-                      showCustomSnackBar(context, 'Please enter your email first', icon: Icons.info_outline);
+                      showCustomSnackBar(
+                        context,
+                        'Please enter your email first',
+                        icon: Icons.info_outline,
+                      );
                       return;
                     }
                     try {
                       await FirebaseAuth.instance.sendPasswordResetEmail(
                         email: _emailController.text.trim(),
                       );
-                      showCustomSnackBar(context, 'Password reset email sent!', icon: Icons.check_circle_outline);
+                      showCustomSnackBar(
+                        context,
+                        'Password reset email sent!',
+                        icon: Icons.check_circle_outline,
+                      );
                     } on FirebaseAuthException catch (e) {
-                      showCustomSnackBar(context, e.message ?? 'Error sending reset email', icon: Icons.error_outline);
+                      showCustomSnackBar(
+                        context,
+                        e.message ?? 'Error sending reset email',
+                        icon: Icons.error_outline,
+                      );
                     }
                   },
                   child: const Text(
@@ -258,7 +299,11 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: const Text(
                     'Get Started',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -282,12 +327,19 @@ class _LoginPageState extends State<LoginPage> {
               // Divider with Or
               Row(
                 children: [
-                  const Expanded(child: Divider(thickness: 1, color: Color(0xFFE0B8A4))),
+                  const Expanded(
+                    child: Divider(thickness: 1, color: Color(0xFFE0B8A4)),
+                  ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text('Or', style: TextStyle(color: Color(0xFF7B7B7B))),
+                    child: Text(
+                      'Or',
+                      style: TextStyle(color: Color(0xFF7B7B7B)),
+                    ),
                   ),
-                  const Expanded(child: Divider(thickness: 1, color: Color(0xFFE0B8A4))),
+                  const Expanded(
+                    child: Divider(thickness: 1, color: Color(0xFFE0B8A4)),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -308,12 +360,17 @@ class _LoginPageState extends State<LoginPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account? ", style: TextStyle(color: Color(0xFF7B7B7B))),
+                  const Text(
+                    "Don't have an account? ",
+                    style: TextStyle(color: Color(0xFF7B7B7B)),
+                  ),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const RegisterPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterPage(),
+                        ),
                       );
                     },
                     child: const Text(
