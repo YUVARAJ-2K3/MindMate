@@ -132,6 +132,11 @@ class _RegFavPageState extends State<RegFavPage> {
                           'Please select or enter a person.',
                           icon: Icons.info_outline,
                         );
+                      } else if (selected == 'Mom') {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const MomPage()),
+                        );
                       } else if (selected == 'Dad') {
                         Navigator.pushReplacement(
                           context,
