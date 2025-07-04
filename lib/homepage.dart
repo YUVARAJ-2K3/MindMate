@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'custom_snackbar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -110,18 +111,20 @@ class _HomePageState extends State<HomePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 57, vertical: 13),
                     ),
                     onPressed: () {
-                      // Handle Done action
                       String selected = _selectedPerson == 'Others'
                           ? _otherController.text.trim()
                           : _selectedPerson ?? '';
                       if (selected.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please select or enter a person.')),
+                        showCustomSnackBar(
+                          context,
+                          'Please select or enter a person.',
+                          icon: Icons.info_outline,
                         );
                       } else {
-                        // You can handle the selected value here
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('You selected: $selected')),
+                        showCustomSnackBar(
+                          context,
+                          'You selected: ' + selected,
+                          icon: Icons.check_circle_outline,
                         );
                       }
                     },
