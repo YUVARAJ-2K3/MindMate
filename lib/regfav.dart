@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'custom_snackbar.dart';
 import 'mom_page.dart';
+import 'dad_page.dart';
 
 class RegFavPage extends StatefulWidget {
   const RegFavPage({super.key});
@@ -126,12 +127,10 @@ class _RegFavPageState extends State<RegFavPage> {
                           'Please select or enter a person.',
                           icon: Icons.info_outline,
                         );
-                      } else if (selected == 'Mom') {
-                        Navigator.push(
+                      } else if (selected == 'Dad') {
+                        Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const MomPage(),
-                          ),
+                          MaterialPageRoute(builder: (context) => const DadPage()),
                         );
                       } else {
                         showCustomSnackBar(
