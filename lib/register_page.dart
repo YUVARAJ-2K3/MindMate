@@ -17,42 +17,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
 
-  // Reusable custom SnackBar function
-  void showCustomSnackBar(BuildContext context, String message, {IconData icon = Icons.info_outline, Color backgroundColor = const Color(0xFFDA8D7A)}) {
-    final width = MediaQuery.of(context).size.width;
-    final snackBar = SnackBar(
-      content: Row(
-        children: [
-          Icon(icon, color: Colors.white),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: backgroundColor,
-      behavior: SnackBarBehavior.floating,
-      margin: EdgeInsets.symmetric(horizontal: width * 0.05, vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      duration: const Duration(seconds: 3),
-      action: SnackBarAction(
-        label: 'Dismiss',
-        textColor: Colors.white,
-        onPressed: () {},
-      ),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
   // Helper function to check if user exists in Firestore by username
   Future<bool> _userExists(String email) async {
     String username = email.split('@')[0];
@@ -75,7 +39,9 @@ class _RegisterPageState extends State<RegisterPage> {
       // Use centralized user existence check
       bool exists = await _userExists(email);
       if (exists) {
-        showCustomSnackBar(context, 'Already User exists, so use sign in.', icon: Icons.info_outline);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Already User exits, so use sign in.')),
+        );
         return;
       }
       try {
@@ -90,11 +56,15 @@ class _RegisterPageState extends State<RegisterPage> {
           'name': _nameController.text.trim(),
           'provider': 'email',
         });
-        showCustomSnackBar(context, 'Registration successful!', icon: Icons.check_circle_outline);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration successful!')),
+        );
         Navigator.pop(context); // Go back to login
       } on FirebaseAuthException catch (e) {
         // Show error from Firebase Auth (e.g., email already in use)
-        showCustomSnackBar(context, e.message ?? 'Registration failed', icon: Icons.error_outline);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Registration failed')),
+        );
       }
     }
   }
@@ -307,7 +277,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       bool exists = await _userExists(user.email!);
                       String username = user.email!.split('@')[0];
                       if (exists) {
-                        showCustomSnackBar(context, 'User already exists, use Google sign in.', icon: Icons.info_outline);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('User already exists, use Google sign in.')),
+                        );
                         return;
                       }
                       await FirebaseFirestore.instance.collection('users').doc(username).set({
@@ -317,11 +289,15 @@ class _RegisterPageState extends State<RegisterPage> {
                         'photoURL': user.photoURL ?? '',
                         'provider': 'google',
                       });
-                      showCustomSnackBar(context, 'Google registration successful!', icon: Icons.check_circle_outline);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Google registration successful!')),
+                      );
                       Navigator.pop(context); // Go back to login or home
                     }
                   } catch (e) {
-                    showCustomSnackBar(context, 'Google sign-in failed: $e', icon: Icons.error_outline);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Google sign-in failed: $e')),
+                    );
                   }
                 },
                 child: ClipOval(
