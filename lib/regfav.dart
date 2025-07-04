@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'custom_snackbar.dart';
 import 'mom_page.dart';
 import 'dad_page.dart';
+import 'sibling_page.dart';
+import 'bestfriend_page.dart';
+import 'lovers_page.dart';
+import 'grand_page.dart';
+import 'others_page.dart';
 
 class RegFavPage extends StatefulWidget {
   const RegFavPage({super.key});
@@ -131,6 +136,31 @@ class _RegFavPageState extends State<RegFavPage> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (context) => const DadPage()),
+                        );
+                      } else if (selected == 'Siblings') {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SiblingPage()),
+                        );
+                      } else if (selected == 'Best Friend') {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const BestFriendPage()),
+                        );
+                      } else if (selected == 'Love') {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoversPage()),
+                        );
+                      } else if (selected == 'Grandparents') {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const GrandPage()),
+                        );
+                      } else if (_selectedPerson == 'Others') {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const OthersPage()),
                         );
                       } else {
                         showCustomSnackBar(

@@ -68,7 +68,13 @@ flutter:
     - assets/google.png
     - assets/mom_child.png
     - assets/dad_child.png
-    
+    - assets/sibling.png
+    - assets/bestfriend.png
+    - assets/lovers.png
+    - assets/grandparents.png
+    - assets/others.png
+
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
