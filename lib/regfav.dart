@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'custom_snackbar.dart';
+import 'mom_page.dart';
 
 class RegFavPage extends StatefulWidget {
   const RegFavPage({super.key});
@@ -43,38 +44,37 @@ class _RegFavPageState extends State<RegFavPage> {
                 const Center(
                   child: Text(
                     'Select Your Comfort Person',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 29),
-                ..._options.map((option) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3.0),
-                      child: Row(
-                        children: [
-                          Radio<String>(
-                            value: option['label']!,
-                            groupValue: _selectedPerson,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedPerson = value;
-                              });
-                            },
-                          ),
-                          Text(
-                            option['label']!,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(width: 9),
-                          Text(
-                            option['emoji']!,
-                            style: const TextStyle(fontSize: 23),
-                          ),
-                        ],
-                      ),
-                    )),
+                ..._options.map(
+                  (option) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3.0),
+                    child: Row(
+                      children: [
+                        Radio<String>(
+                          value: option['label']!,
+                          groupValue: _selectedPerson,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedPerson = value;
+                            });
+                          },
+                        ),
+                        Text(
+                          option['label']!,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(width: 9),
+                        Text(
+                          option['emoji']!,
+                          style: const TextStyle(fontSize: 23),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 if (_selectedPerson == 'Others')
                   Padding(
                     padding: const EdgeInsets.only(top: 9.0, bottom: 5.0),
@@ -95,7 +95,10 @@ class _RegFavPageState extends State<RegFavPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(16)),
-                          borderSide: BorderSide(color: Color(0xFFD39C7B), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFFD39C7B),
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
@@ -108,7 +111,10 @@ class _RegFavPageState extends State<RegFavPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 57, vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 57,
+                        vertical: 13,
+                      ),
                     ),
                     onPressed: () {
                       String selected = _selectedPerson == 'Others'
@@ -119,6 +125,13 @@ class _RegFavPageState extends State<RegFavPage> {
                           context,
                           'Please select or enter a person.',
                           icon: Icons.info_outline,
+                        );
+                      } else if (selected == 'Mom') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MomPage(),
+                          ),
                         );
                       } else {
                         showCustomSnackBar(
@@ -136,19 +149,26 @@ class _RegFavPageState extends State<RegFavPage> {
                 ),
                 const SizedBox(height: 29),
                 Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.lock_outline, size: 16, color: Color(0xFF7B7B7B)),
-                  SizedBox(width: 3),
-                  Flexible(
-                    child: Text(
-                      'Your information is private and protected.\n We\'re here for your peace of mind.',
-                      style: TextStyle(fontSize: 10, color: Color(0xFF7B7B7B)),
-                      textAlign: TextAlign.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 16,
+                      color: Color(0xFF7B7B7B),
                     ),
-                  ),
-                ],
-              ),
+                    SizedBox(width: 3),
+                    Flexible(
+                      child: Text(
+                        'Your information is private and protected.\n We\'re here for your peace of mind.',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF7B7B7B),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -156,4 +176,4 @@ class _RegFavPageState extends State<RegFavPage> {
       ),
     );
   }
-} 
+}
