@@ -5,6 +5,7 @@ import 'register_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'homepage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -124,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
-# google  
+
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -316,7 +317,7 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      'Your information is private and protected. We\'re here for your peace of mind.',
+                      'Your information is private and protected. \n We\'re here for your peace of mind.',
                       style: TextStyle(fontSize: 12, color: Color(0xFF7B7B7B)),
                       textAlign: TextAlign.center,
                     ),

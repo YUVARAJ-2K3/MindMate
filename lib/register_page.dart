@@ -277,7 +277,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      'Your information is private and protected. We\'re here for your peace of mind.',
+                      'Your information is private and protected. \nWe\'re here for your peace of mind.',
                       style: TextStyle(fontSize: 12, color: Color(0xFF7B7B7B)),
                       textAlign: TextAlign.center,
                     ),
