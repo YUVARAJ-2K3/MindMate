@@ -20,13 +20,13 @@ class _RegFavPageState extends State<RegFavPage> {
   final TextEditingController _otherController = TextEditingController();
 
   final List<Map<String, String>> _options = [
-    {'label': 'Mom', 'emoji': '👩‍👧'},
-    {'label': 'Dad', 'emoji': '👨‍👧'},
-    {'label': 'Siblings', 'emoji': '👫'},
-    {'label': 'Best Friend', 'emoji': '🧑‍🤝‍🧑'},
-    {'label': 'Love', 'emoji': '💑'},
-    {'label': 'Grandparents', 'emoji': '👵👴'},
-    {'label': 'Others', 'emoji': ''},
+    {'label': 'Mom', 'image': 'assets/mom1.png'},
+    {'label': 'Dad', 'image': 'assets/dad1.png'},
+    {'label': 'Siblings', 'image': 'assets/sibling1.png'},
+    {'label': 'Best Friend', 'image': 'assets/bestfriend1.png'},
+    {'label': 'Love', 'image': 'assets/lovers1.png'},
+    {'label': 'Grandparents', 'image': 'assets/grandparents1.png'},
+    {'label': 'Others', 'image': ''},
   ];
 
   @override
@@ -50,7 +50,7 @@ class _RegFavPageState extends State<RegFavPage> {
                 const Center(
                   child: Text(
                     'Select Your Comfort Person',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 29),
@@ -70,13 +70,16 @@ class _RegFavPageState extends State<RegFavPage> {
                         ),
                         Text(
                           option['label']!,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 16),
                         ),
                         const SizedBox(width: 9),
-                        Text(
-                          option['emoji']!,
-                          style: const TextStyle(fontSize: 23),
-                        ),
+                        if (option['label'] != 'Others' && option['image']!.isNotEmpty)
+                          Image.asset(
+                            option['image']!,
+                            width: 25,
+                            height: 25,
+                            fit: BoxFit.contain,
+                          ),
                       ],
                     ),
                   ),
@@ -86,12 +89,12 @@ class _RegFavPageState extends State<RegFavPage> {
                     padding: const EdgeInsets.only(top: 9.0, bottom: 5.0),
                     child: TextField(
                       controller: _otherController,
-                      style: const TextStyle(fontSize: 11),
+                      style: const TextStyle(fontSize: 13),
                       decoration: const InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFFFF8E1),
                         hintText: 'If others, please enter the person',
-                        hintStyle: TextStyle(fontSize: 11),
+                        hintStyle: TextStyle(fontSize: 13),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(16)),
                         ),
@@ -195,7 +198,7 @@ class _RegFavPageState extends State<RegFavPage> {
                       child: Text(
                         'Your information is private and protected.\n We\'re here for your peace of mind.',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: Color(0xFF7B7B7B),
                         ),
                         textAlign: TextAlign.center,

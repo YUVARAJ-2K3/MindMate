@@ -71,7 +71,12 @@ flutter:
     - assets/lovers.png
     - assets/grandparents.png
     - assets/others.png
-
+    - assets/mom1.png
+    - assets/dad1.png
+    - assets/sibling1.png
+    - assets/bestfriend1.png
+    - assets/lovers1.png
+    - assets/grandparents1.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
