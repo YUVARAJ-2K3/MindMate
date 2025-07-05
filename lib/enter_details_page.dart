@@ -11,7 +11,7 @@ class EnterDetailsPage extends StatefulWidget {
 
 class _EnterDetailsPageState extends State<EnterDetailsPage> {
   final _formKey = GlobalKey<FormState>();
-  String? _ageGroup, _city, _country, _countryCode = '+91';
+  String? _ageGroup, _country, _countryCode = '+91';
   File? _profileImage;
   final _phoneController = TextEditingController();
   final _cityController = TextEditingController();
@@ -290,10 +290,6 @@ class _EnterDetailsPageState extends State<EnterDetailsPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back, size: 20, color: Colors.black),
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
                           const Expanded(
                             child: Center(
                               child: Text(
@@ -397,8 +393,14 @@ class _EnterDetailsPageState extends State<EnterDetailsPage> {
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(color: Color(0xFFF8C8B2), width: 2),
                                 ),
+                                prefix: Padding(
+                                  padding: EdgeInsets.only(right: 8),
+                                  child: Icon(Icons.email, color: Color(0xFFDA8D7A), size: 20),
+                                ),
+                                contentPadding: EdgeInsets.only(left: 0, top: 14, bottom: 14),
                               ),
-                              style: const TextStyle(fontSize: 14, fontFamily: 'Montserrat'),
+                              style: const TextStyle(fontSize: 15, fontFamily: 'Montserrat'),
+                              textAlignVertical: TextAlignVertical.center,
                             ),
                             const SizedBox(height: 12),
                             // Age Group
