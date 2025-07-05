@@ -219,6 +219,25 @@ class _EnterDetailsPageState extends State<EnterDetailsPage> {
     {'label': '👴 Seniors(55 & above)', 'value': 'Seniors(55 & above)'},
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _checkUserDetails();
+  }
+
+  Future<void> _checkUserDetails() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final username = user.email?.split('@')[0];
+    if (username == null) return;
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+    if (userDoc.exists && userDoc.data() != null && userDoc.data()!['name'] != null && userDoc.data()!['ageGroup'] != null && userDoc.data()!['phone'] != null && userDoc.data()!['city'] != null && userDoc.data()!['country'] != null) {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/selectFavPerson');
+      }
+    }
+  }
+
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
@@ -234,14 +253,19 @@ class _EnterDetailsPageState extends State<EnterDetailsPage> {
       if (user == null) return;
       final email = user.email ?? '';
       final username = email.split('@')[0];
-      await FirebaseFirestore.instance.collection('users').doc(username).set({
-        'email': user.email,
-        'name': _nameController.text.trim(),
-        'ageGroup': _ageGroup,
-        'phone': '$_countryCode ${_phoneController.text.trim()}',
-        'city': _cityController.text.trim(),
-        'country': _country,
-      });
+      final userDocRef = FirebaseFirestore.instance.collection('users').doc(username);
+      final userDoc = await userDocRef.get();
+      final existing = userDoc.data() ?? {};
+      Map<String, dynamic> updateData = {};
+      if (existing['email'] == null) updateData['email'] = user.email;
+      if (existing['name'] == null) updateData['name'] = _nameController.text.trim();
+      if (existing['ageGroup'] == null) updateData['ageGroup'] = _ageGroup;
+      if (existing['phone'] == null) updateData['phone'] = '$_countryCode ${_phoneController.text.trim()}';
+      if (existing['city'] == null) updateData['city'] = _cityController.text.trim();
+      if (existing['country'] == null) updateData['country'] = _country;
+      if (updateData.isNotEmpty) {
+        await userDocRef.update(updateData);
+      }
       Navigator.pushReplacementNamed(context, '/selectFavPerson');
     }
   }

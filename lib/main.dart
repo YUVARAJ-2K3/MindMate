@@ -82,8 +82,16 @@ class _LoginPageState extends State<LoginPage> {
           email: email,
           password: _passwordController.text.trim(),
         );
-        // Navigate to home or show success
-        Navigator.pushReplacementNamed(context, '/enterDetails');
+        // Check if user details exist in Firestore
+        String username = email.split('@')[0];
+        var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+        if (userDoc.exists && userDoc.data() != null && userDoc.data()!['name'] != null && userDoc.data()!['ageGroup'] != null && userDoc.data()!['phone'] != null && userDoc.data()!['city'] != null && userDoc.data()!['country'] != null) {
+          // Details exist, skip EnterDetailsPage
+          Navigator.pushReplacementNamed(context, '/selectFavPerson');
+        } else {
+          // Details missing, go to EnterDetailsPage
+          Navigator.pushReplacementNamed(context, '/enterDetails');
+        }
       } on FirebaseAuthException catch (e) {
         showCustomSnackBar(
           context,
@@ -121,8 +129,16 @@ class _LoginPageState extends State<LoginPage> {
           );
           return;
         }
-        // Redirect to HomePage after successful sign-in
-        Navigator.pushReplacementNamed(context, '/enterDetails');
+        // Check if user details exist in Firestore
+        String username = user.email!.split('@')[0];
+        var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+        if (userDoc.exists && userDoc.data() != null && userDoc.data()!['name'] != null && userDoc.data()!['ageGroup'] != null && userDoc.data()!['phone'] != null && userDoc.data()!['city'] != null && userDoc.data()!['country'] != null) {
+          // Details exist, skip EnterDetailsPage
+          Navigator.pushReplacementNamed(context, '/selectFavPerson');
+        } else {
+          // Details missing, go to EnterDetailsPage
+          Navigator.pushReplacementNamed(context, '/enterDetails');
+        }
       }
     } catch (e) {
       showCustomSnackBar(
