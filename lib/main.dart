@@ -24,12 +24,63 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Login Page',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const LoginPage(),
-      initialRoute: '/login',
+      home: const SplashScreen(),
+      initialRoute: null,
       routes: {
         '/enterDetails': (context) => EnterDetailsPage(),
         '/selectFavPerson': (context) => RegFavPage(),
       },
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkUserStatus();
+  }
+
+  Future<void> _checkUserStatus() async {
+    await Future.delayed(const Duration(milliseconds: 500)); // for splash effect
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+      return;
+    }
+    final username = user.email?.split('@')[0];
+    if (username == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+      return;
+    }
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+    if (userDoc.exists && userDoc.data() != null && userDoc.data()!['name'] != null && userDoc.data()!['ageGroup'] != null && userDoc.data()!['phone'] != null && userDoc.data()!['city'] != null && userDoc.data()!['country'] != null) {
+      Navigator.pushReplacementNamed(context, '/selectFavPerson');
+    } else {
+      Navigator.pushReplacementNamed(context, '/enterDetails');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFFFDE7EF),
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
