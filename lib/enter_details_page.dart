@@ -232,7 +232,9 @@ class _EnterDetailsPageState extends State<EnterDetailsPage> {
     if (_formKey.currentState!.validate()) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      final email = user.email ?? '';
+      final username = email.split('@')[0];
+      await FirebaseFirestore.instance.collection('users').doc(username).set({
         'email': user.email,
         'name': _nameController.text.trim(),
         'ageGroup': _ageGroup,
@@ -351,49 +353,22 @@ class _EnterDetailsPageState extends State<EnterDetailsPage> {
                             ),
                             const SizedBox(height: 4),
                             // Name
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _nameController.text.isEmpty ? 'Panda' : _nameController.text,
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w500,
-                                    fontFamily: 'Montserrat',
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                GestureDetector(
-                                  onTap: () async {
-                                    final name = await showDialog<String>(
-                                      context: context,
-                                      builder: (context) {
-                                        final controller = TextEditingController(text: _nameController.text);
-                                        return AlertDialog(
-                                          title: const Text('Edit Name', style: TextStyle(fontSize: 16)),
-                                          content: TextField(
-                                            controller: controller,
-                                            decoration: const InputDecoration(hintText: 'Enter your name'),
-                                            style: const TextStyle(fontSize: 14),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context, controller.text),
-                                              child: const Text('Save', style: TextStyle(fontSize: 14)),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                    if (name != null && name.trim().isNotEmpty) {
-                                      setState(() {
-                                        _nameController.text = name.trim();
-                                      });
-                                    }
-                                  },
-                                  child: const Icon(Icons.edit, color: Color(0xFFDA8D7A), size: 20),
-                                ),
-                              ],
+                            TextFormField(
+                              controller: _nameController,
+                              textAlign: TextAlign.center,
+                              decoration: const InputDecoration(
+                                hintText: 'your name',
+                                border: InputBorder.none,
+                                isCollapsed: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 0),
+                              ),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Montserrat',
+                                color: Colors.black,
+                              ),
+                              onChanged: (_) => setState(() {}),
                             ),
                             const SizedBox(height: 20),
                             // Email (read-only)
