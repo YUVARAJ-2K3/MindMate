@@ -7,6 +7,7 @@ import 'regfav.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'custom_snackbar.dart';
+import 'enter_details_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,11 @@ class MyApp extends StatelessWidget {
       title: 'Login Page',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const LoginPage(),
+      initialRoute: '/login',
+      routes: {
+        '/enterDetails': (context) => EnterDetailsPage(),
+        '/selectFavPerson': (context) => RegFavPage(),
+      },
     );
   }
 }
@@ -77,10 +83,7 @@ class _LoginPageState extends State<LoginPage> {
           password: _passwordController.text.trim(),
         );
         // Navigate to home or show success
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RegFavPage()),
-        );
+        Navigator.pushReplacementNamed(context, '/enterDetails');
       } on FirebaseAuthException catch (e) {
         showCustomSnackBar(
           context,
@@ -119,10 +122,7 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
         // Redirect to HomePage after successful sign-in
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RegFavPage()),
-        );
+        Navigator.pushReplacementNamed(context, '/enterDetails');
       }
     } catch (e) {
       showCustomSnackBar(
