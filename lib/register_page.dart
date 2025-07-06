@@ -45,12 +45,14 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       try {
         // Try to register in Firebase Auth
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: email,
           password: _passwordController.text.trim(),
         );
+        User? user = userCredential.user;
         // Only if registration succeeds, write to Firestore
         await FirebaseFirestore.instance.collection('users').doc(username).set({
+          'uid': user?.uid ?? '',
           'email': email,
           'name': _nameController.text.trim(),
           'provider': 'email',
@@ -277,9 +279,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       }
                       await FirebaseFirestore.instance.collection('users').doc(username).set({
                         'uid': user.uid,
-                        'name': user.displayName ?? '',
                         'email': user.email ?? '',
-                        'photoURL': user.photoURL ?? '',
                         'provider': 'google',
                       });
                       showCustomSnackBar(context, 'Google registration successful!', icon: Icons.check_circle_outline);
