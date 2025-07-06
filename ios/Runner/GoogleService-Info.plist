@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>732886401439-ed9cfovposiu6adqmh2vv5bht29p53rl.apps.googleusercontent.com</string>
+	<string>302086772846-574o9ksh6huh3694u8l1mpv8qndrb2rr.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.732886401439-ed9cfovposiu6adqmh2vv5bht29p53rl</string>
+	<string>com.googleusercontent.apps.302086772846-574o9ksh6huh3694u8l1mpv8qndrb2rr</string>
 	<key>API_KEY</key>
-	<string>AIzaSyCKZev4ZVAd37FpfryyMM1KXKd2K_sfhR8</string>
+	<string>AIzaSyDj57z8C-YOVLcO5Wv-dwX5EkMQgeedwps</string>
 	<key>GCM_SENDER_ID</key>
-	<string>732886401439</string>
+	<string>302086772846</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.oneandwon.mindmate</string>
 	<key>PROJECT_ID</key>
-	<string>mindmate-9c2e1</string>
+	<string>mindmate-2025</string>
 	<key>STORAGE_BUCKET</key>
-	<string>mindmate-9c2e1.firebasestorage.app</string>
+	<string>mindmate-2025.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,17 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:732886401439:ios:e3acb2f9e57b23ec8b3daa</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.732886401439-ed9cfovposiu6adqmh2vv5bht29p53rl</string>
-			</array>
-		</dict>
-	</array>
+	<string>1:302086772846:ios:392c8061e1de139a466e7f</string>
 </dict>
 </plist>

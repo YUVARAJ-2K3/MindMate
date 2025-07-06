@@ -1,45 +1,53 @@
 {
   "project_info": {
-    "project_number": "732886401439",
-    "project_id": "mindmate-9c2e1",
-    "storage_bucket": "mindmate-9c2e1.firebasestorage.app"
+    "project_number": "302086772846",
+    "project_id": "mindmate-2025",
+    "storage_bucket": "mindmate-2025.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:732886401439:android:94d4de8dd9e7d9658b3daa",
+        "mobilesdk_app_id": "1:302086772846:android:7acd857d9bf1dc76466e7f",
         "android_client_info": {
           "package_name": "com.oneandwon.mindmate"
         }
       },
       "oauth_client": [
         {
-          "client_id": "732886401439-hbtq5d4s43q4rqoftk3b2mtd0jtclhjb.apps.googleusercontent.com",
+          "client_id": "302086772846-39pckf1svg9a74s1vbqusn15m1rskh3a.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.oneandwon.mindmate",
-            "certificate_hash": "e517291c5379a7dcb34be6765bb0b9f205a409ac"
+            "certificate_hash": "1b2f86b3b10ea4a43685ceba7392d122b7cdf0bc"
           }
         },
         {
-          "client_id": "732886401439-mimubdtoqil7aiu2pn19qet25fr8k1re.apps.googleusercontent.com",
+          "client_id": "302086772846-hscb07vv82i244f4kjcqotdc6fhl33lt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.oneandwon.mindmate",
+            "certificate_hash": "d8828ed6a7b78a6c7634619d15ea9e65bff7605f"
+          }
+        },
+        {
+          "client_id": "302086772846-ooks9ek81h4v4a7r2lafgf3st1g0oitu.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDLLqqvTqt6Rs2Z5WRWRiT4u1wt5Za2NbE"
+          "current_key": "AIzaSyAGGlGZyIpiaAYGU7WhJbf2-nnfd5vt-f8"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "732886401439-mimubdtoqil7aiu2pn19qet25fr8k1re.apps.googleusercontent.com",
+              "client_id": "302086772846-ooks9ek81h4v4a7r2lafgf3st1g0oitu.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "732886401439-ed9cfovposiu6adqmh2vv5bht29p53rl.apps.googleusercontent.com",
+              "client_id": "302086772846-574o9ksh6huh3694u8l1mpv8qndrb2rr.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.oneandwon.mindmate"
