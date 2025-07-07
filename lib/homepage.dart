@@ -255,6 +255,26 @@ class _HomePageState extends State<HomePage> {
     return '${hour.toString().padLeft(2, '0')}.00';
   }
 
+  // Before displaying scheduler entries, sort 'times' by time ascending
+  List<String> get sortedTimes {
+    List<String> sorted = List.from(times);
+    sorted.sort((a, b) {
+      double ta = double.tryParse(a.replaceAll(':', '.')) ?? 0;
+      double tb = double.tryParse(b.replaceAll(':', '.')) ?? 0;
+      return ta.compareTo(tb);
+    });
+    return sorted;
+  }
+
+  // Helper to check if a time string matches the current hour
+  bool isCurrentHour(String t) {
+    final now = TimeOfDay.now();
+    final parts = t.split('.');
+    if (parts.length < 1) return false;
+    int hour = int.tryParse(parts[0]) ?? -1;
+    return hour == now.hour;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -432,7 +452,7 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      ...times.map((t) => Column(
+                      ...sortedTimes.map((t) => Column(
                         children: [
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -467,17 +487,29 @@ class _HomePageState extends State<HomePage> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    schedule[t] ?? '',
+                                    (schedule[t]?.isNotEmpty ?? false)
+                                      ? schedule[t]![0].toUpperCase() + schedule[t]!.substring(1)
+                                      : '',
                                     style: const TextStyle(fontSize: 15),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const Divider(
-                            thickness: 1,
-                            color: Color(0xFFFFBFAE),
-                            height: 1,
+                          Container(
+                            height: isCurrentHour(t) ? 3 : 1,
+                            decoration: BoxDecoration(
+                              color: isCurrentHour(t) ? const Color(0xFFFFBFAE) : Color(0xFFFFBFAE),
+                              boxShadow: isCurrentHour(t)
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color.fromARGB(255, 250, 164, 164).withOpacity(0.7),
+                                        blurRadius: 12,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
+                                  : [],
+                            ),
                           ),
                         ],
                       )),
@@ -494,7 +526,7 @@ class _HomePageState extends State<HomePage> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => SchedulerDetailsPage(
-                                  initialSchedule: times.map((t) => {'time': t, 'desc': schedule[t] ?? ''}).toList(),
+                                  initialSchedule: sortedTimes.map((t) => {'time': t, 'desc': schedule[t] ?? ''}).toList(),
                                 ),
                               ),
                             );
@@ -570,49 +602,52 @@ class _HomePageState extends State<HomePage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (!showFirstHalf)
-                            IconButton(
-                              icon: const Icon(Icons.arrow_left),
-                              onPressed: () {
-                                setState(() {
-                                  showFirstHalf = true;
-                                });
-                              },
-                            ),
+                          // Single left arrow
                           IconButton(
-                            icon: const Icon(Icons.calendar_today),
-                            onPressed: () async {
-                              DateTime? picked = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime(selectedYear, selectedMonth),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                                initialEntryMode: DatePickerEntryMode.calendarOnly,
-                                selectableDayPredicate: (date) => date.day == 1,
-                              );
-                              if (picked != null) {
-                                setState(() {
-                                  selectedYear = picked.year;
-                                  selectedMonth = picked.month;
-                                  DateTime today = DateTime.now();
-                                  showFirstHalf = (today.year == selectedYear && today.month == selectedMonth && today.day <= 15) || !(today.year == selectedYear && today.month == selectedMonth);
-                                });
-                              }
+                            icon: const Icon(Icons.arrow_left),
+                            onPressed: () {
+                              setState(() {
+                                if (showFirstHalf) {
+                                  // Go to previous month, second half
+                                  if (selectedMonth == 1) {
+                                    selectedMonth = 12;
+                                    selectedYear--;
+                                  } else {
+                                    selectedMonth--;
+                                  }
+                                  showFirstHalf = false;
+                                } else {
+                                  // Go to first half of current month
+                                  showFirstHalf = true;
+                                }
+                              });
                             },
                           ),
                           Text(
                             '${getMonthName(selectedMonth)} $selectedYear',
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          if (showFirstHalf && DateTime.now().year == selectedYear && DateTime.now().month == selectedMonth && DateTime.now().day > 15)
-                            IconButton(
-                              icon: const Icon(Icons.arrow_right),
-                              onPressed: () {
-                                setState(() {
+                          // Single right arrow
+                          IconButton(
+                            icon: const Icon(Icons.arrow_right),
+                            onPressed: () {
+                              setState(() {
+                                if (!showFirstHalf && selectedMonth == 12) {
+                                  // Go to next year, first month, first half
+                                  selectedMonth = 1;
+                                  selectedYear++;
+                                  showFirstHalf = true;
+                                } else if (!showFirstHalf) {
+                                  // Go to next month, first half
+                                  selectedMonth++;
+                                  showFirstHalf = true;
+                                } else if (DateUtils.getDaysInMonth(selectedYear, selectedMonth) > 15) {
+                                  // Go to second half of current month
                                   showFirstHalf = false;
-                                });
-                              },
-                            ),
+                                }
+                              });
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
