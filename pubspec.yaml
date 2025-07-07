@@ -36,6 +36,7 @@ dependencies:
   cloud_firestore: ^5.6.11
   image_picker: ^1.0.0
   cupertino_icons: ^1.0.8
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -77,7 +78,11 @@ flutter:
     - assets/bestfriend1.png
     - assets/lovers1.png
     - assets/grandparents1.png
-
+    - assets/goodmorning.png
+    - assets/goodafternoon.png
+    - assets/goodevening.png
+    - assets/goodnight.png
+    - assets/star.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

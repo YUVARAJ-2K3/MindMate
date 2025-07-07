@@ -56,6 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
           'email': email,
           'name': _nameController.text.trim(),
           'provider': 'email',
+          'favPersonId': null,
         });
         showCustomSnackBar(context, 'Registration successful!', icon: Icons.check_circle_outline);
         Navigator.pop(context); // Go back to login
@@ -281,6 +282,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         'uid': user.uid,
                         'email': user.email ?? '',
                         'provider': 'google',
+                        'favPersonId': null,
                       });
                       showCustomSnackBar(context, 'Google registration successful!', icon: Icons.check_circle_outline);
                       Navigator.pop(context); // Go back to login or home
