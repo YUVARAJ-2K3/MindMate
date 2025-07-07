@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'scheduler_details_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -23,27 +26,6 @@ class _HomePageState extends State<HomePage> {
   // Scheduler state
   List<String> times = ['9.00', '10.00', '11.00'];
   Map<String, String> schedule = {};
-  final Map<String, TextEditingController> controllers = {
-    '9.00': TextEditingController(),
-    '10.00': TextEditingController(),
-    '11.00': TextEditingController(),
-  };
-
-  // Calendar state
-  DateTime selectedDate = DateTime.now();
-  Map<int, Map<String, dynamic>> moodData = {
-    1: {'emoji': '😃', 'percent': 90},
-    2: {'emoji': '😡', 'percent': 60},
-    3: {'emoji': '😕', 'percent': 35},
-    4: {'emoji': '😊', 'percent': 85},
-    5: {'emoji': '😁', 'percent': 95},
-    6: {'emoji': '😃', 'percent': 90},
-    7: {'emoji': '😡', 'percent': 60},
-    8: {'emoji': '😕', 'percent': 35},
-    9: {'emoji': '😊', 'percent': 85},
-    10: {'emoji': '😁', 'percent': 95},
-    11: {'emoji': '😢', 'percent': 90},
-  };
 
   // 1. Add state for selected month and year
   int selectedMonth = DateTime.now().month;
@@ -105,75 +87,90 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showMoodDialog(int day) async {
-    String? selectedEmoji;
-    int? selectedPercent;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select your mood'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Wrap(
-                spacing: 10,
-                children: [
-                  '😃', '😊', '😁', '😡', '😕', '😢'
-                ].map((emoji) => GestureDetector(
-                  onTap: () {
-                    selectedEmoji = emoji;
-                    setState(() {});
-                  },
-                  child: Text(
-                    emoji,
-                    style: TextStyle(fontSize: 28, backgroundColor: selectedEmoji == emoji ? Colors.orange[100] : null),
-                  ),
-                )).toList(),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Percent'),
-                onChanged: (val) {
-                  selectedPercent = int.tryParse(val);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (selectedEmoji != null && selectedPercent != null) {
-                  setState(() {
-                    moodData[day] = {'emoji': selectedEmoji, 'percent': selectedPercent};
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+
+  String? get userId {
+    final user = FirebaseAuth.instance.currentUser;
+    return user?.email?.split('@')[0];
+  }
+
+  // Helper for today's date string
+  String get todayKey => DateFormat('yyyy-MM-dd').format(DateTime.now());
+  String get yesterdayKey => DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 1)));
+
+  // --- Firebase Load/Save Functions ---
+  Future<void> loadChecklist() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('checklist').doc(todayKey).get();
+    if (doc.exists) {
+      setState(() {
+        checklist = List<bool>.from(doc['items']);
+      });
+    }
+  }
+  Future<void> saveChecklist() async {
+    await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('checklist').doc(todayKey)
+        .set({'items': checklist});
+  }
+
+  Future<void> loadScheduler() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('scheduler').doc(todayKey).get();
+    if (doc.exists) {
+      setState(() {
+        schedule = Map<String, String>.from(doc['items']);
+        times = schedule.keys.toList();
+      });
+    }
+  }
+  Future<void> saveScheduler() async {
+    await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('scheduler').doc(todayKey)
+        .set({'items': schedule});
+  }
+
+  Future<void> loadMoods() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('moods').doc(todayKey).get();
+    if (doc.exists) {
+      setState(() {
+        moodPercentData = Map<String, int>.from(doc['items']);
+      });
+    }
+  }
+  Future<void> saveMoods() async {
+    await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('moods').doc(todayKey)
+        .set({'items': moodPercentData});
+  }
+
+  // --- Reset at Midnight ---
+  void _scheduleMidnightReset() async {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final duration = tomorrow.difference(now);
+    Future.delayed(duration, () async {
+      setState(() {
+        checklist = List.filled(checklist.length, false);
+      });
+      _scheduleMidnightReset(); // Reschedule for the next day
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    _scheduleMidnightReset();
-  }
-
-  void _scheduleMidnightReset() async {
-    final now = DateTime.now();
-    final tomorrow = DateTime(now.year, now.month, now.day + 1);
-    final duration = tomorrow.difference(now);
-    Future.delayed(duration, () {
-      setState(() {
-        checklist = List.filled(checklist.length, false);
-      });
-      _scheduleMidnightReset(); // Reschedule for the next day
+    Firebase.initializeApp().then((_) async {
+      await loadChecklist();
+      await loadScheduler();
+      await loadMoods();
+      _scheduleMidnightReset();
     });
   }
 
@@ -229,6 +226,33 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  void _addRow() {
+    setState(() {
+      // Generate a unique time string (e.g., next available hour)
+      String newTime = _getNextAvailableTime();
+      times.add(newTime);
+      schedule[newTime] = '';
+    });
+  }
+
+  void _removeRow(int index) {
+    setState(() {
+      String timeToRemove = times[index];
+      times.removeAt(index);
+      schedule.remove(timeToRemove);
+    });
+  }
+
+  // Helper to generate a unique time string
+  String _getNextAvailableTime() {
+    int hour = 6;
+    while (times.contains('${hour.toString().padLeft(2, '0')}.00')) {
+      hour++;
+      if (hour > 23) hour = 0;
+    }
+    return '${hour.toString().padLeft(2, '0')}.00';
   }
 
   @override
@@ -337,6 +361,7 @@ class _HomePageState extends State<HomePage> {
                               setState(() {
                                 checklist[i] = val ?? false;
                               });
+                              saveChecklist();
                             },
                             title: Text(
                               checklistItems[i],
@@ -356,9 +381,6 @@ class _HomePageState extends State<HomePage> {
                           ),
                           onPressed: () {
                             _showChecklistSummary();
-                            setState(() {
-                              checklist = List.filled(checklist.length, false);
-                            });
                           },
                           child: const Text('Done'),
                         ),
@@ -468,9 +490,6 @@ class _HomePageState extends State<HomePage> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                           onPressed: () async {
-                            for (var t in times) {
-                              schedule[t] = controllers[t]?.text ?? '';
-                            }
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -481,12 +500,18 @@ class _HomePageState extends State<HomePage> {
                             );
                             if (result != null && result is List) {
                               setState(() {
-                                for (int i = 0; i < result.length && i < times.length; i++) {
-                                  times[i] = result[i]['time'] ?? times[i];
-                                  schedule[times[i]] = result[i]['desc'] ?? '';
-                                  controllers[times[i]]?.text = result[i]['desc'] ?? '';
+                                schedule = {};
+                                times = [];
+                                for (final row in result) {
+                                  final time = row['time'] ?? '';
+                                  final desc = row['desc'] ?? '';
+                                  if (time.isNotEmpty) {
+                                    schedule[time] = desc;
+                                    times.add(time);
+                                  }
                                 }
                               });
+                              saveScheduler();
                             }
                           },
                           child: const Text('Edit'),
@@ -650,6 +675,7 @@ class _HomePageState extends State<HomePage> {
                                 setState(() {
                                   moodPercentData[key] = entered;
                                 });
+                                saveMoods();
                               }
                             } : null,
                             child: Container(
