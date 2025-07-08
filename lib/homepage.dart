@@ -711,6 +711,43 @@ class _HomePageState extends State<HomePage> {
                                   moodPercentData[key] = entered;
                                 });
                                 saveMoods();
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  builder: (context) => Dialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                      side: const BorderSide(color: Color(0xFFFFA07A), width: 1),
+                                    ),
+                                    backgroundColor: Colors.white,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Text(
+                                            'Great!',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              fontFamily: 'Montserrat',
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 12),
+                                          Text(
+                                            "That's A Small Win&\nEvery Win Matters 💖",
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontFamily: 'Montserrat',
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
                               }
                             } : null,
                             child: Container(
