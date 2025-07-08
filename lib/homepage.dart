@@ -4,6 +4,10 @@ import 'scheduler_details_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'favorite_page.dart';
+import 'journal_page.dart';
+import 'vault_page.dart' as vault;
+import 'settings_page.dart' as settings;
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -163,15 +167,569 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  int _selectedIndex = 0;
+
+  static const List<Map<String, dynamic>> _navItems = [
+    {'icon': Icons.home, 'label': 'Home'},
+    {'icon': Icons.favorite, 'label': 'Favorite'},
+    {'icon': Icons.menu_book, 'label': 'Journal'},
+    {'icon': Icons.safety_check, 'label': 'Vault'},
+    {'icon': Icons.settings, 'label': 'Settings'},
+  ];
+
+  // List of pages for navigation
+  late final List<Widget> _pages;
+
   @override
   void initState() {
     super.initState();
+    _pages = [
+      _buildHomeContent(),
+      const FavoritePage(),
+      const JournalPage(),
+      const vault.VaultPage(),
+      const settings.SettingsPage(),
+    ];
     Firebase.initializeApp().then((_) async {
       await loadChecklist();
       await loadScheduler();
       await loadMoods();
       _scheduleMidnightReset();
     });
+  }
+
+  void _onNavBarTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  // Extract the current home content as a widget
+  Widget _buildHomeContent() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Good Morning Image Section
+              Container(
+                width: double.infinity,
+                height: 180,
+                decoration: BoxDecoration(
+                  color: Colors.pink[100],
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          getGreetingImage(),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 180,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 12,
+                      bottom: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Checklist Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 255, 247, 234),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Checklist', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Color.fromARGB(255, 248, 200, 178),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset('assets/star.png', width: 20, height: 20),
+                                  const SizedBox(width: 6),
+                                  const Flexible(
+                                    child: Text(
+                                      "Turn your chaos into calm\nLet's tick things off together",
+                                      style: TextStyle(fontSize: 11, color: Color.fromARGB(255, 0, 0, 0)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ...List.generate(checklistItems.length, (i) =>
+                      Theme(
+                        data: Theme.of(context).copyWith(
+                          checkboxTheme: CheckboxThemeData(
+                            shape: const CircleBorder(),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity(horizontal: -2, vertical: -2),
+                          ),
+                        ),
+                        child: CheckboxListTile(
+                          value: checklist[i],
+                          onChanged: (val) {
+                            setState(() {
+                              checklist[i] = val ?? false;
+                            });
+                            saveChecklist();
+                          },
+                          title: Text(
+                            checklistItems[i],
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFDA8D7A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: () {
+                          _showChecklistSummary();
+                        },
+                        child: const Text('Done'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Scheduler Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 255, 247, 234),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Scheduler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Color.fromARGB(255, 248, 200, 178),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset('assets/star.png', width: 20, height: 20),
+                                  const SizedBox(width: 6),
+                                  const Flexible(
+                                    child: Text(
+                                      "Plan peacefully,live mindfully!",
+                                      style: TextStyle(fontSize: 11, color: Color.fromARGB(255, 0, 0, 0)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ...sortedTimes.map((t) => Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 60,
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 255, 230, 230),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: const BoxDecoration(
+                                        color: Color.fromARGB(255, 248, 200, 178),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      t,
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  (schedule[t]?.isNotEmpty ?? false)
+                                    ? schedule[t]![0].toUpperCase() + schedule[t]!.substring(1)
+                                    : '',
+                                  style: const TextStyle(fontSize: 15),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          height: isCurrentHour(t) ? 3 : 1,
+                          decoration: BoxDecoration(
+                            color: isCurrentHour(t) ? const Color(0xFFFFBFAE) : Color(0xFFFFBFAE),
+                            boxShadow: isCurrentHour(t)
+                                ? [
+                                    BoxShadow(
+                                      color: const Color.fromARGB(255, 250, 164, 164).withOpacity(0.7),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                        ),
+                      ],
+                    )),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFDA8D7A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SchedulerDetailsPage(
+                                initialSchedule: sortedTimes.map((t) => {'time': t, 'desc': schedule[t] ?? ''}).toList(),
+                              ),
+                            ),
+                          );
+                          if (result != null && result is List) {
+                            setState(() {
+                              schedule = {};
+                              times = [];
+                              for (final row in result) {
+                                final time = row['time'] ?? '';
+                                final desc = row['desc'] ?? '';
+                                if (time.isNotEmpty) {
+                                  schedule[time] = desc;
+                                  times.add(time);
+                                }
+                              }
+                            });
+                            saveScheduler();
+                          }
+                        },
+                        child: const Text('Edit'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Calendar Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 255, 247, 234),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text('Calendar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Color.fromARGB(255, 248, 200, 178),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset('assets/star.png', width: 20, height: 20),
+                                  const SizedBox(width: 6),
+                                  const Flexible(
+                                    child: Text(
+                                      "Feel it , track it ,understand it",
+                                      style: TextStyle(fontSize: 11, color: Color.fromARGB(255, 0, 0, 0)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Add extra spacing before month/year selector row
+                    const SizedBox(height: 12),
+                    // Month and year selector row with calendar icon and arrows
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Single left arrow
+                        IconButton(
+                          icon: const Icon(Icons.arrow_left),
+                          onPressed: () {
+                            setState(() {
+                              if (showFirstHalf) {
+                                // Go to previous month, second half
+                                if (selectedMonth == 1) {
+                                  selectedMonth = 12;
+                                  selectedYear--;
+                                } else {
+                                  selectedMonth--;
+                                }
+                                showFirstHalf = false;
+                              } else {
+                                // Go to first half of current month
+                                showFirstHalf = true;
+                              }
+                            });
+                          },
+                        ),
+                        Text(
+                          '${getMonthName(selectedMonth)} $selectedYear',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        // Single right arrow
+                        IconButton(
+                          icon: const Icon(Icons.arrow_right),
+                          onPressed: () {
+                            setState(() {
+                              if (!showFirstHalf && selectedMonth == 12) {
+                                // Go to next year, first month, first half
+                                selectedMonth = 1;
+                                selectedYear++;
+                                showFirstHalf = true;
+                              } else if (!showFirstHalf) {
+                                // Go to next month, first half
+                                selectedMonth++;
+                                showFirstHalf = true;
+                              } else if (DateUtils.getDaysInMonth(selectedYear, selectedMonth) > 15) {
+                                // Go to second half of current month
+                                showFirstHalf = false;
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      getMonthName(selectedMonth),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5,
+                        childAspectRatio: 0.7,
+                        crossAxisSpacing: 4,
+                        mainAxisSpacing: 4,
+                      ),
+                      itemCount: getVisibleDays(selectedYear, selectedMonth, showFirstHalf).length,
+                      itemBuilder: (context, i) {
+                        int day = getVisibleDays(selectedYear, selectedMonth, showFirstHalf)[i];
+                        DateTime cellDate = DateTime(selectedYear, selectedMonth, day);
+                        DateTime today = DateTime.now();
+                        DateTime yesterday = today.subtract(const Duration(days: 1));
+                        String key = '${selectedYear.toString().padLeft(4, '0')}-${selectedMonth.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+                        bool isToday = cellDate.year == today.year && cellDate.month == today.month && cellDate.day == today.day;
+                        bool isYesterday = cellDate.year == yesterday.year && cellDate.month == yesterday.month && cellDate.day == yesterday.day;
+                        int? percent = moodPercentData[key];
+                        bool canEdit = isToday || isYesterday;
+                        bool isPast = cellDate.isBefore(DateTime(today.year, today.month, today.day));
+                        return GestureDetector(
+                          onTap: canEdit ? () async {
+                            int? entered = await showDialog<int>(
+                              context: context,
+                              builder: (context) {
+                                int? tempPercent = percent;
+                                return AlertDialog(
+                                  title: Text('Enter mood % for $day ${getMonthName(selectedMonth)}'),
+                                  content: TextField(
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(labelText: 'Percent (0-100)'),
+                                    onChanged: (val) {
+                                      tempPercent = int.tryParse(val);
+                                    },
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        if (tempPercent != null && tempPercent! >= 0 && tempPercent! <= 100) {
+                                          Navigator.pop(context, tempPercent);
+                                        } else {
+                                          Navigator.pop(context);
+                                        }
+                                      },
+                                      child: const Text('Save'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                            if (entered != null) {
+                              setState(() {
+                                moodPercentData[key] = entered;
+                              });
+                              saveMoods();
+                              showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                builder: (context) => Dialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                    side: const BorderSide(color: Color(0xFFFFA07A), width: 1),
+                                  ),
+                                  backgroundColor: Colors.white,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Text(
+                                          'Great!',
+                                          style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          "That's A Small Win&\nEvery Win Matters 💖",
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          } : null,
+                          child: Container(
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(255, 255, 230, 230),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                if (isPast && percent == null)
+                                  const Text(
+                                    'Missed',
+                                    style: TextStyle(fontSize: 10, color: Colors.red),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                if (percent != null)
+                                  Text(
+                                    getEmojiForPercent(percent),
+                                    style: const TextStyle(fontSize: 24),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                if (canEdit && percent == null)
+                                  const Text(
+                                    'Click to enter',
+                                    style: TextStyle(fontSize: 10),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                if (percent != null)
+                                  Text(
+                                    '$percent%',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                Text(
+                                  day.toString(),
+                                  style: const TextStyle(fontSize: 8, color: Color.fromARGB(255, 0, 0, 0)),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showChecklistSummary() {
@@ -279,528 +837,36 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 250, 209, 209),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Good Morning Image Section
-                Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    color: Colors.pink[100],
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Stack(
-                    children: [
-                      Center(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Image.asset(
-                            getGreetingImage(),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: 180,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 12,
-                        bottom: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Checklist Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 255, 247, 234),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Checklist', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.topRight,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 248, 200, 178),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Image.asset('assets/star.png', width: 20, height: 20),
-                                    const SizedBox(width: 6),
-                                    const Flexible(
-                                      child: Text(
-                                        "Turn your chaos into calm\nLet's tick things off together",
-                                        style: TextStyle(fontSize: 11, color: Color.fromARGB(255, 0, 0, 0)),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      ...List.generate(checklistItems.length, (i) =>
-                        Theme(
-                          data: Theme.of(context).copyWith(
-                            checkboxTheme: CheckboxThemeData(
-                              shape: const CircleBorder(),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity(horizontal: -2, vertical: -2),
-                            ),
-                          ),
-                          child: CheckboxListTile(
-                            value: checklist[i],
-                            onChanged: (val) {
-                              setState(() {
-                                checklist[i] = val ?? false;
-                              });
-                              saveChecklist();
-                            },
-                            title: Text(
-                              checklistItems[i],
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ),
-                      Center(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFDA8D7A),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          onPressed: () {
-                            _showChecklistSummary();
-                          },
-                          child: const Text('Done'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Scheduler Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 255, 247, 234),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Scheduler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.topRight,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 248, 200, 178),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Image.asset('assets/star.png', width: 20, height: 20),
-                                    const SizedBox(width: 6),
-                                    const Flexible(
-                                      child: Text(
-                                        "Plan peacefully,live mindfully!",
-                                        style: TextStyle(fontSize: 11, color: Color.fromARGB(255, 0, 0, 0)),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      ...sortedTimes.map((t) => Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 60,
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Color.fromARGB(255, 255, 230, 230),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: const BoxDecoration(
-                                          color: Color.fromARGB(255, 248, 200, 178),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        t,
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    (schedule[t]?.isNotEmpty ?? false)
-                                      ? schedule[t]![0].toUpperCase() + schedule[t]!.substring(1)
-                                      : '',
-                                    style: const TextStyle(fontSize: 15),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            height: isCurrentHour(t) ? 3 : 1,
-                            decoration: BoxDecoration(
-                              color: isCurrentHour(t) ? const Color(0xFFFFBFAE) : Color(0xFFFFBFAE),
-                              boxShadow: isCurrentHour(t)
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color.fromARGB(255, 250, 164, 164).withOpacity(0.7),
-                                        blurRadius: 12,
-                                        spreadRadius: 2,
-                                      ),
-                                    ]
-                                  : [],
-                            ),
-                          ),
-                        ],
-                      )),
-                      const SizedBox(height: 8),
-                      Center(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFDA8D7A),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          onPressed: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SchedulerDetailsPage(
-                                  initialSchedule: sortedTimes.map((t) => {'time': t, 'desc': schedule[t] ?? ''}).toList(),
-                                ),
-                              ),
-                            );
-                            if (result != null && result is List) {
-                              setState(() {
-                                schedule = {};
-                                times = [];
-                                for (final row in result) {
-                                  final time = row['time'] ?? '';
-                                  final desc = row['desc'] ?? '';
-                                  if (time.isNotEmpty) {
-                                    schedule[time] = desc;
-                                    times.add(time);
-                                  }
-                                }
-                              });
-                              saveScheduler();
-                            }
-                          },
-                          child: const Text('Edit'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Calendar Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 255, 247, 234),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text('Calendar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 248, 200, 178),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Image.asset('assets/star.png', width: 20, height: 20),
-                                    const SizedBox(width: 6),
-                                    const Flexible(
-                                      child: Text(
-                                        "Feel it , track it ,understand it",
-                                        style: TextStyle(fontSize: 11, color: Color.fromARGB(255, 0, 0, 0)),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      // Add extra spacing before month/year selector row
-                      const SizedBox(height: 12),
-                      // Month and year selector row with calendar icon and arrows
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Single left arrow
-                          IconButton(
-                            icon: const Icon(Icons.arrow_left),
-                            onPressed: () {
-                              setState(() {
-                                if (showFirstHalf) {
-                                  // Go to previous month, second half
-                                  if (selectedMonth == 1) {
-                                    selectedMonth = 12;
-                                    selectedYear--;
-                                  } else {
-                                    selectedMonth--;
-                                  }
-                                  showFirstHalf = false;
-                                } else {
-                                  // Go to first half of current month
-                                  showFirstHalf = true;
-                                }
-                              });
-                            },
-                          ),
-                          Text(
-                            '${getMonthName(selectedMonth)} $selectedYear',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          // Single right arrow
-                          IconButton(
-                            icon: const Icon(Icons.arrow_right),
-                            onPressed: () {
-                              setState(() {
-                                if (!showFirstHalf && selectedMonth == 12) {
-                                  // Go to next year, first month, first half
-                                  selectedMonth = 1;
-                                  selectedYear++;
-                                  showFirstHalf = true;
-                                } else if (!showFirstHalf) {
-                                  // Go to next month, first half
-                                  selectedMonth++;
-                                  showFirstHalf = true;
-                                } else if (DateUtils.getDaysInMonth(selectedYear, selectedMonth) > 15) {
-                                  // Go to second half of current month
-                                  showFirstHalf = false;
-                                }
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        getMonthName(selectedMonth),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
-                          childAspectRatio: 0.7,
-                          crossAxisSpacing: 4,
-                          mainAxisSpacing: 4,
-                        ),
-                        itemCount: getVisibleDays(selectedYear, selectedMonth, showFirstHalf).length,
-                        itemBuilder: (context, i) {
-                          int day = getVisibleDays(selectedYear, selectedMonth, showFirstHalf)[i];
-                          DateTime cellDate = DateTime(selectedYear, selectedMonth, day);
-                          DateTime today = DateTime.now();
-                          DateTime yesterday = today.subtract(const Duration(days: 1));
-                          String key = '${selectedYear.toString().padLeft(4, '0')}-${selectedMonth.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-                          bool isToday = cellDate.year == today.year && cellDate.month == today.month && cellDate.day == today.day;
-                          bool isYesterday = cellDate.year == yesterday.year && cellDate.month == yesterday.month && cellDate.day == yesterday.day;
-                          int? percent = moodPercentData[key];
-                          bool canEdit = isToday || isYesterday;
-                          bool isPast = cellDate.isBefore(DateTime(today.year, today.month, today.day));
-                          return GestureDetector(
-                            onTap: canEdit ? () async {
-                              int? entered = await showDialog<int>(
-                                context: context,
-                                builder: (context) {
-                                  int? tempPercent = percent;
-                                  return AlertDialog(
-                                    title: Text('Enter mood % for $day ${getMonthName(selectedMonth)}'),
-                                    content: TextField(
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(labelText: 'Percent (0-100)'),
-                                      onChanged: (val) {
-                                        tempPercent = int.tryParse(val);
-                                      },
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          if (tempPercent != null && tempPercent! >= 0 && tempPercent! <= 100) {
-                                            Navigator.pop(context, tempPercent);
-                                          } else {
-                                            Navigator.pop(context);
-                                          }
-                                        },
-                                        child: const Text('Save'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                              if (entered != null) {
-                                setState(() {
-                                  moodPercentData[key] = entered;
-                                });
-                                saveMoods();
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: true,
-                                  builder: (context) => Dialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24),
-                                      side: const BorderSide(color: Color(0xFFFFA07A), width: 1),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          Text(
-                                            'Great!',
-                                            style: TextStyle(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
-                                              fontFamily: 'Montserrat',
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          SizedBox(height: 12),
-                                          Text(
-                                            "That's A Small Win&\nEvery Win Matters 💖",
-                                            style: TextStyle(
-                                              fontSize: 20,
-                                              fontFamily: 'Montserrat',
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                            } : null,
-                            child: Container(
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 255, 230, 230),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  if (isPast && percent == null)
-                                    const Text(
-                                      'Missed',
-                                      style: TextStyle(fontSize: 10, color: Colors.red),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  if (percent != null)
-                                    Text(
-                                      getEmojiForPercent(percent),
-                                      style: const TextStyle(fontSize: 24),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  if (canEdit && percent == null)
-                                    const Text(
-                                      'Click to enter',
-                                      style: TextStyle(fontSize: 10),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  if (percent != null)
-                                    Text(
-                                      '$percent%',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  Text(
-                                    day.toString(),
-                                    style: const TextStyle(fontSize: 8, color: Color.fromARGB(255, 0, 0, 0)),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.7),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          selectedItemColor: const Color.fromARGB(255, 208, 130, 112),
+          unselectedItemColor: const Color.fromARGB(255, 99, 80, 80),
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
+          unselectedLabelStyle: const TextStyle(fontFamily: 'Montserrat'),
+          currentIndex: _selectedIndex,
+          onTap: _onNavBarTapped,
+          items: _navItems.map((item) => BottomNavigationBarItem(
+            icon: Icon(item['icon'], size: 25),
+            label: item['label'],
+          )).toList(),
         ),
       ),
     );
