@@ -6,8 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'favorite_page.dart';
 import 'journal_page.dart';
-import 'vault_page.dart' as vault;
-import 'settings_page.dart' as settings;
+import 'vault_page.dart';
+import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -177,19 +177,17 @@ class _HomePageState extends State<HomePage> {
     {'icon': Icons.settings, 'label': 'Settings'},
   ];
 
-  // List of pages for navigation
-  late final List<Widget> _pages;
+  List<Widget> get _pages => [
+    _buildHomeContent(),
+    const FavoritePage(),
+    const JournalPage(),
+    const VaultPage(),
+    const SettingsPage(),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _pages = [
-      _buildHomeContent(),
-      const FavoritePage(),
-      const JournalPage(),
-      const vault.VaultPage(),
-      const settings.SettingsPage(),
-    ];
     Firebase.initializeApp().then((_) async {
       await loadChecklist();
       await loadScheduler();
