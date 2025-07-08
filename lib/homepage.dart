@@ -171,9 +171,9 @@ class _HomePageState extends State<HomePage> {
 
   static const List<Map<String, dynamic>> _navItems = [
     {'icon': Icons.home, 'label': 'Home'},
-    {'icon': Icons.favorite, 'label': 'Favorite'},
     {'icon': Icons.menu_book, 'label': 'Journal'},
     {'icon': Icons.safety_check, 'label': 'Vault'},
+    {'icon': Icons.favorite, 'label': 'Favorite'},
     {'icon': Icons.settings, 'label': 'Settings'},
   ];
 

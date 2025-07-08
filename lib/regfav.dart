@@ -7,6 +7,7 @@ import 'bestfriend_page.dart';
 import 'lovers_page.dart';
 import 'grand_page.dart';
 import 'others_page.dart';
+import 'homepage.dart';
 
 class RegFavPage extends StatefulWidget {
   const RegFavPage({super.key});
@@ -18,6 +19,8 @@ class RegFavPage extends StatefulWidget {
 class _RegFavPageState extends State<RegFavPage> {
   String? _selectedPerson;
   final TextEditingController _otherController = TextEditingController();
+  final TextEditingController _otherRelationController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
 
   final List<Map<String, String>> _options = [
     {'label': 'Mom', 'image': 'assets/mom1.png'},
@@ -32,6 +35,8 @@ class _RegFavPageState extends State<RegFavPage> {
   @override
   void dispose() {
     _otherController.dispose();
+    _otherRelationController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -49,8 +54,8 @@ class _RegFavPageState extends State<RegFavPage> {
                 const SizedBox(height: 37),
                 const Center(
                   child: Text(
-                    'Select Your Comfort Person',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    'Choose Your Comfort Persons',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 29),
@@ -85,15 +90,75 @@ class _RegFavPageState extends State<RegFavPage> {
                   ),
                 ),
                 if (_selectedPerson == 'Others')
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 9.0, bottom: 5.0),
+                        child: TextField(
+                          controller: _otherController,
+                          style: const TextStyle(fontSize: 13),
+                          decoration: const InputDecoration(
+                            filled: true,
+                            fillColor: Color(0xFFFFF8E1),
+                            hintText: 'Enter the person name',
+                            hintStyle: TextStyle(fontSize: 13),
+                          
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                              borderSide: BorderSide(
+                                color: Color(0xFFDA8D7A),
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 5.0),
+                        child: TextField(
+                          controller: _otherRelationController,
+                          style: const TextStyle(fontSize: 13),
+                          decoration: const InputDecoration(
+                            filled: true,
+                            fillColor: Color(0xFFFFF8E1),
+                            hintText: 'Enter your relation with them',
+                            hintStyle: TextStyle(fontSize: 13),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                              borderSide: BorderSide(
+                                color: Color(0xFFDA8D7A),
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (_selectedPerson != null && _selectedPerson != 'Others')
                   Padding(
                     padding: const EdgeInsets.only(top: 9.0, bottom: 5.0),
                     child: TextField(
-                      controller: _otherController,
+                      controller: _noteController,
                       style: const TextStyle(fontSize: 13),
                       decoration: const InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFFFF8E1),
-                        hintText: 'If others, please enter the person',
+                        hintText: 'Enter the name of the person',
                         hintStyle: TextStyle(fontSize: 13),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -129,13 +194,28 @@ class _RegFavPageState extends State<RegFavPage> {
                       String selected = _selectedPerson == 'Others'
                           ? _otherController.text.trim()
                           : _selectedPerson ?? '';
-                      if (selected.isEmpty) {
-                        showCustomSnackBar(
-                          context,
-                          'Please select or enter a person.',
-                          icon: Icons.info_outline,
-                        );
-                      } else if (selected == 'Mom') {
+                      String note = _noteController.text.trim();
+                      String relation = _otherRelationController.text.trim();
+                      if (_selectedPerson == 'Others') {
+                        if (selected.isEmpty || relation.isEmpty) {
+                          showCustomSnackBar(
+                            context,
+                            'Please enter both person and relation.',
+                            icon: Icons.info_outline,
+                          );
+                          return;
+                        }
+                      } else {
+                        if (selected.isEmpty || note.isEmpty) {
+                          showCustomSnackBar(
+                            context,
+                            'Please select a person and enter a note.',
+                            icon: Icons.info_outline,
+                          );
+                          return;
+                        }
+                      }
+                      if (selected == 'Mom') {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (context) => const MomPage()),
@@ -181,6 +261,21 @@ class _RegFavPageState extends State<RegFavPage> {
                     child: const Text(
                       'Done',
                       style: TextStyle(fontSize: 14, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomePage()),
+                      );
+                    },
+                    child: const Text(
+                      'Skip',
+                      style: TextStyle(fontSize: 14, color: Color(0xFFDA8D7A)),
                     ),
                   ),
                 ),
