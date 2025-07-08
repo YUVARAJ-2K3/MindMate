@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'journal_entry_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class JournalPage extends StatefulWidget {
   const JournalPage({Key? key}) : super(key: key);
@@ -15,6 +18,131 @@ class _JournalPageState extends State<JournalPage> {
   String problem = '';
   String selectedIssue = 'Not Listening, Just Blaming';
   bool? feelBetter;
+  bool showCongrats = false;
+  bool hasEntry = false;
+  String entryTitle = '';
+  String entryDescription = '';
+  int streak = 0;
+
+  String? get userId {
+    final user = FirebaseAuth.instance.currentUser;
+    return user?.email?.split('@')[0];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodayJournal();
+    _scheduleMidnightReset();
+  }
+
+  Future<void> _loadTodayJournal() async {
+    if (userId == null) return;
+    final todayKey = _dateKey(DateTime.now());
+    final doc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('journals').doc(todayKey).get();
+    if (doc.exists) {
+      setState(() {
+        hasEntry = true;
+        entryTitle = doc['title'] ?? '';
+        entryDescription = doc['description'] ?? '';
+        streak = doc['streak'] ?? 0;
+        showCongrats = true;
+      });
+    } else {
+      setState(() {
+        hasEntry = false;
+        entryTitle = '';
+        entryDescription = '';
+        showCongrats = false;
+      });
+    }
+  }
+
+  Future<void> _saveJournal(String title, String description, DateTime date) async {
+    if (userId == null) return;
+    final dateKey = _dateKey(date);
+    int newStreak = await _calculateStreak(dateKey);
+    await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('journals').doc(dateKey)
+        .set({
+      'title': title,
+      'description': description,
+      'date': dateKey,
+      'streak': newStreak,
+    });
+    setState(() {
+      hasEntry = true;
+      entryTitle = title;
+      entryDescription = description;
+      streak = newStreak;
+      showCongrats = true;
+    });
+  }
+
+  Future<void> _loadJournalForDate(DateTime date) async {
+    if (userId == null) return;
+    final dateKey = _dateKey(date);
+    final doc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('journals').doc(dateKey).get();
+    if (doc.exists) {
+      setState(() {
+        hasEntry = true;
+        entryTitle = doc['title'] ?? '';
+        entryDescription = doc['description'] ?? '';
+        streak = doc['streak'] ?? 0;
+        showCongrats = true;
+      });
+    } else {
+      setState(() {
+        hasEntry = false;
+        entryTitle = '';
+        entryDescription = '';
+        showCongrats = false;
+        streak = 0;
+      });
+    }
+  }
+
+  Future<int> _calculateStreak(String todayKey) async {
+    if (userId == null) return 1;
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final yesterdayKey = _dateKey(yesterday);
+    final yesterdayDoc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('journals').doc(yesterdayKey).get();
+    if (yesterdayDoc.exists) {
+      int prevStreak = yesterdayDoc['streak'] ?? 0;
+      // Check if yesterday's entry was consecutive
+      return prevStreak + 1;
+    } else {
+      // Missed a day, reset streak
+      return 1;
+    }
+  }
+
+  void _scheduleMidnightReset() {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final duration = tomorrow.difference(now);
+    Future.delayed(duration, () async {
+      setState(() {
+        hasEntry = false;
+        entryTitle = '';
+        entryDescription = '';
+        showCongrats = false;
+        // Do not reset streak here, as it is managed by Firestore
+      });
+      _scheduleMidnightReset(); // Reschedule for the next day
+      _loadTodayJournal(); // Load new day's journal
+    });
+  }
+
+  String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   @override
   void dispose() {
@@ -25,43 +153,56 @@ class _JournalPageState extends State<JournalPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFEBEE),
+      backgroundColor: const Color.fromARGB(255, 251, 213, 213),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header with background and title
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 150,
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/journal_bg.png'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                child: Container(
+                  width: double.infinity,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: Colors.pink[100],
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 10,
-                    child: Center(
-                      child: Text(
-                        'Journal Space',
-                        style: const TextStyle(
-                          fontFamily: 'Puppies Play',
-                          fontSize: 80,
-                          color: Color(0xFF7B3F1D),
-                          fontWeight: FontWeight.w400,
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Image.asset(
+                            'assets/journal_bg.png',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 180,
+                          ),
                         ),
                       ),
-                    ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 45,
+                        child: Center(
+                          child: Text(
+                            'Journal Space',
+                            style: const TextStyle(
+                              fontFamily: 'Puppies Play',
+                              fontSize: 70,
+                              color: Color(0xFF7B3F1D),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
+              const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8),
                 child: Column(
@@ -81,7 +222,7 @@ class _JournalPageState extends State<JournalPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF7C7B0),
+                            color: Color.fromARGB(255, 248, 200, 178),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -154,6 +295,7 @@ class _JournalPageState extends State<JournalPage> {
                                               setState(() {
                                                 selectedDate = picked;
                                               });
+                                              _loadJournalForDate(selectedDate);
                                             }
                                           },
                                         ),
@@ -207,41 +349,116 @@ class _JournalPageState extends State<JournalPage> {
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          // Fire streak
-                                          Container(
-                                            margin: const EdgeInsets.only(bottom: 18),
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius: BorderRadius.circular(500),
-                                              border: Border.all(color: Colors.orange.shade200, width: 1),
-                                            ),
-                                            child: Row(
+                                          if (showCongrats)
+                                            Column(
                                               mainAxisSize: MainAxisSize.min,
-                                              children: const [
-                                                Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
-                                                SizedBox(width: 6),
-                                                Text('92', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(color: Colors.orange.shade200, width: 1),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: const [
+                                                      Icon(Icons.local_fire_department, color: Colors.orange, size: 18),
+                                                      SizedBox(width: 4),
+                                                      Text('92', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 18),
+                                                const Text(
+                                                  'Great!\nEvery Feeling\nDeserves A Page',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                                                ),
+                                              ],
+                                            )
+                                          else
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                // Fire streak
+                                                Container(
+                                                  margin: const EdgeInsets.only(bottom: 18),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius: BorderRadius.circular(500),
+                                                    border: Border.all(color: Colors.orange.shade200, width: 1),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: const [
+                                                      Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
+                                                      SizedBox(width: 6),
+                                                      Text('92', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 18),
+                                                const Text(
+                                                  'Pending...\nLet\'s complete',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                                                ),
                                               ],
                                             ),
-                                          ),
-                                          const SizedBox(height: 18),
-                                          const Text(
-                                            'Pending...\nLet\'s complete',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                                          ),
                                           const SizedBox(height: 28),
                                           ElevatedButton(
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: Color(0xFFD9A05B),
+                                              backgroundColor: const Color(0xFFD9A05B),
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(66),
+                                                borderRadius: BorderRadius.circular(80),
                                               ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 10),
+                                              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 0),
                                             ),
-                                            onPressed: () {},
-                                            child: const Text("Let's Write", style: TextStyle(fontSize: 18, color: Colors.white)),
+                                            onPressed: () async {
+                                              if (hasEntry) {
+                                                // Edit mode
+                                                final result = await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => JournalEntryPage(
+                                                      date: selectedDate,
+                                                      title: entryTitle,
+                                                      description: entryDescription,
+                                                      readOnly: false,
+                                                    ),
+                                                  ),
+                                                );
+                                                if (result is Map) {
+                                                  setState(() {
+                                                    hasEntry = true;
+                                                    entryTitle = result['title'] ?? '';
+                                                    entryDescription = result['description'] ?? '';
+                                                    showCongrats = true;
+                                                  });
+                                                  _saveJournal(entryTitle, entryDescription, selectedDate);
+                                                }
+                                              } else {
+                                                // Write mode
+                                                final result = await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => JournalEntryPage(date: selectedDate),
+                                                  ),
+                                                );
+                                                if (result is Map) {
+                                                  setState(() {
+                                                    hasEntry = true;
+                                                    entryTitle = result['title'] ?? '';
+                                                    entryDescription = result['description'] ?? '';
+                                                    showCongrats = true;
+                                                  });
+                                                  _saveJournal(entryTitle, entryDescription, selectedDate);
+                                                }
+                                              }
+                                            },
+                                            child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 18, color: Colors.white)),
                                           ),
                                         ],
                                       ),
