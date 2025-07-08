@@ -179,9 +179,9 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> get _pages => [
     _buildHomeContent(),
-    const FavoritePage(),
     const JournalPage(),
     const VaultPage(),
+    const FavoritePage(),
     const SettingsPage(),
   ];
 
