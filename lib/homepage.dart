@@ -128,6 +128,22 @@ class _HomePageState extends State<HomePage> {
         schedule = Map<String, String>.from(doc['items']);
         times = schedule.keys.toList();
       });
+    } else {
+      // Try to load yesterday's scheduler if today is empty
+      final yestDoc = await FirebaseFirestore.instance
+          .collection('users').doc(userId)
+          .collection('scheduler').doc(yesterdayKey).get();
+      if (yestDoc.exists) {
+        setState(() {
+          schedule = Map<String, String>.from(yestDoc['items']);
+          times = schedule.keys.toList();
+        });
+      } else {
+        setState(() {
+          schedule = {};
+          times = [];
+        });
+      }
     }
   }
   Future<void> saveScheduler() async {
@@ -138,20 +154,46 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadMoods() async {
-    final doc = await FirebaseFirestore.instance
+    final snapshot = await FirebaseFirestore.instance
         .collection('users').doc(userId)
-        .collection('moods').doc(todayKey).get();
-    if (doc.exists) {
-      setState(() {
-        moodPercentData = Map<String, int>.from(doc['items']);
-      });
+        .collection('moods').get();
+
+    Map<String, int> allMoods = {};
+    for (var doc in snapshot.docs) {
+      final items = Map<String, int>.from(doc['items']);
+      allMoods.addAll(items);
     }
+    setState(() {
+      moodPercentData = allMoods;
+    });
   }
   Future<void> saveMoods() async {
     await FirebaseFirestore.instance
         .collection('users').doc(userId)
         .collection('moods').doc(todayKey)
         .set({'items': moodPercentData});
+  }
+
+  Future<void> saveMoodForDate(String dateKey, int percent) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('moods').doc(dateKey);
+
+    final doc = await docRef.get();
+    Map<String, int> items = {};
+    if (doc.exists) {
+      items = Map<String, int>.from(doc['items']);
+    }
+    items[dateKey] = percent;
+
+    await docRef.set({'items': items});
+  }
+
+  Future<void> saveSchedulerForDate(String dateKey, Map<String, String> schedule) async {
+    await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('scheduler').doc(dateKey)
+        .set({'items': schedule});
   }
 
   // --- Reset at Midnight ---
@@ -456,17 +498,32 @@ class _HomePageState extends State<HomePage> {
                             ),
                           );
                           if (result != null && result is List) {
-                            setState(() {
-                              schedule = {};
-                              times = [];
-                              for (final row in result) {
-                                final time = row['time'] ?? '';
-                                final desc = row['desc'] ?? '';
-                                if (time.isNotEmpty) {
-                                  schedule[time] = desc;
-                                  times.add(time);
-                                }
+                            // Fetch yesterday's schedule for merging
+                            final yestDoc = await FirebaseFirestore.instance
+                                .collection('users').doc(userId)
+                                .collection('scheduler').doc(yesterdayKey).get();
+                            Map<String, String> yesterdaySchedule = {};
+                            if (yestDoc.exists) {
+                              yesterdaySchedule = Map<String, String>.from(yestDoc['items']);
+                            }
+
+                            // Build the new schedule, merging unchanged times from yesterday
+                            Map<String, String> newSchedule = {};
+                            List<String> newTimes = [];
+                            for (final row in result) {
+                              final time = row['time'] ?? '';
+                              final desc = row['desc'] ?? '';
+                              if (time.isNotEmpty) {
+                                newSchedule[time] = desc.isNotEmpty
+                                    ? desc
+                                    : (yesterdaySchedule[time] ?? ''); // Use yesterday's if not edited
+                                newTimes.add(time);
                               }
+                            }
+
+                            setState(() {
+                              schedule = newSchedule;
+                              times = newTimes;
                             });
                             saveScheduler();
                           }
@@ -635,7 +692,7 @@ class _HomePageState extends State<HomePage> {
                               setState(() {
                                 moodPercentData[key] = entered;
                               });
-                              saveMoods();
+                              await saveMoodForDate(key, entered);
                               showDialog(
                                 context: context,
                                 barrierDismissible: true,

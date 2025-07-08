@@ -9,13 +9,13 @@ class JournalEntryPage extends StatefulWidget {
   final bool readOnly;
 
   const JournalEntryPage({
-    Key? key,
+    super.key,
     required this.date,
-    this.streak = 92,
+    required this.streak,
     this.title,
     this.description,
     this.readOnly = false,
-  }) : super(key: key);
+  });
 
   @override
   State<JournalEntryPage> createState() => _JournalEntryPageState();
@@ -75,7 +75,7 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
                       children: [
                         const Icon(Icons.local_fire_department, color: Colors.orange, size: 22),
                         const SizedBox(width: 4),
-                        Text('${widget.streak}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        Text(widget.streak.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       ],
                     ),
                   ),

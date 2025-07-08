@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'journal_entry_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'custom_snackbar.dart';
 
 class JournalPage extends StatefulWidget {
   const JournalPage({Key? key}) : super(key: key);
@@ -313,7 +314,25 @@ class _JournalPageState extends State<JournalPage> {
                                       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
                                       elevation: 0,
                                     ),
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      await _loadJournalForDate(selectedDate);
+                                      if (hasEntry) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => JournalEntryPage(
+                                              date: selectedDate,
+                                              streak: streak,
+                                              title: entryTitle,
+                                              description: entryDescription,
+                                              readOnly: true,
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        showCustomSnackBar(context, 'No journal entry for this date.');
+                                      }
+                                    },
                                     child: const Text('View', style: TextStyle(fontSize: 15, color: Colors.white)),
                                   ),
                                 ],
@@ -362,10 +381,10 @@ class _JournalPageState extends State<JournalPage> {
                                                   ),
                                                   child: Row(
                                                     mainAxisSize: MainAxisSize.min,
-                                                    children: const [
+                                                    children: [
                                                       Icon(Icons.local_fire_department, color: Colors.orange, size: 18),
                                                       SizedBox(width: 4),
-                                                      Text('92', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                      Text(streak.toString(), style: TextStyle(fontWeight: FontWeight.bold)),
                                                     ],
                                                   ),
                                                 ),
@@ -392,10 +411,10 @@ class _JournalPageState extends State<JournalPage> {
                                                   ),
                                                   child: Row(
                                                     mainAxisSize: MainAxisSize.min,
-                                                    children: const [
+                                                    children: [
                                                       Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
                                                       SizedBox(width: 6),
-                                                      Text('92', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                                      Text(streak.toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                                     ],
                                                   ),
                                                 ),
@@ -416,48 +435,57 @@ class _JournalPageState extends State<JournalPage> {
                                               ),
                                               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 0),
                                             ),
-                                            onPressed: () async {
-                                              if (hasEntry) {
-                                                // Edit mode
-                                                final result = await Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => JournalEntryPage(
-                                                      date: selectedDate,
-                                                      title: entryTitle,
-                                                      description: entryDescription,
-                                                      readOnly: false,
-                                                    ),
-                                                  ),
-                                                );
-                                                if (result is Map) {
-                                                  setState(() {
-                                                    hasEntry = true;
-                                                    entryTitle = result['title'] ?? '';
-                                                    entryDescription = result['description'] ?? '';
-                                                    showCongrats = true;
-                                                  });
-                                                  _saveJournal(entryTitle, entryDescription, selectedDate);
-                                                }
-                                              } else {
-                                                // Write mode
-                                                final result = await Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => JournalEntryPage(date: selectedDate),
-                                                  ),
-                                                );
-                                                if (result is Map) {
-                                                  setState(() {
-                                                    hasEntry = true;
-                                                    entryTitle = result['title'] ?? '';
-                                                    entryDescription = result['description'] ?? '';
-                                                    showCongrats = true;
-                                                  });
-                                                  _saveJournal(entryTitle, entryDescription, selectedDate);
-                                                }
-                                              }
-                                            },
+                                            onPressed: DateTime.now().year == selectedDate.year && DateTime.now().month == selectedDate.month && DateTime.now().day == selectedDate.day
+                                                ? () async {
+                                                    await _loadJournalForDate(selectedDate);
+                                                    if (hasEntry) {
+                                                      // Edit mode
+                                                      final result = await Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) => JournalEntryPage(
+                                                            date: selectedDate,
+                                                            streak: streak,
+                                                            title: entryTitle,
+                                                            description: entryDescription,
+                                                            readOnly: false,
+                                                          ),
+                                                        ),
+                                                      );
+                                                      if (result is Map) {
+                                                        setState(() {
+                                                          hasEntry = true;
+                                                          entryTitle = result['title'] ?? '';
+                                                          entryDescription = result['description'] ?? '';
+                                                          showCongrats = true;
+                                                        });
+                                                        _saveJournal(entryTitle, entryDescription, selectedDate);
+                                                      }
+                                                    } else {
+                                                      // Write mode
+                                                      final result = await Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) => JournalEntryPage(
+                                                            date: selectedDate,
+                                                            streak: streak,
+                                                          ),
+                                                        ),
+                                                      );
+                                                      if (result is Map) {
+                                                        setState(() {
+                                                          hasEntry = true;
+                                                          entryTitle = result['title'] ?? '';
+                                                          entryDescription = result['description'] ?? '';
+                                                          showCongrats = true;
+                                                        });
+                                                        _saveJournal(entryTitle, entryDescription, selectedDate);
+                                                      }
+                                                    }
+                                                  }
+                                                : () {
+                                                    showCustomSnackBar(context, "You can only write or edit today's journal.");
+                                                  },
                                             child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 18, color: Colors.white)),
                                           ),
                                         ],
