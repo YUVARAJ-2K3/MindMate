@@ -638,6 +638,24 @@ class _JournalPageState extends State<JournalPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Add a view-only textbox at the top, only if no shoutout for today
+                          if (todayShoutoutTitle == null || todayShoutoutTitle!.isEmpty)
+                            TextField(
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: 'Enter here ....',
+                                filled: true,
+                                fillColor: const Color(0xFFF9D7C7),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ),
+                              style: const TextStyle(fontSize: 16, color: Colors.black54),
+                            ),
+                          if (todayShoutoutTitle == null || todayShoutoutTitle!.isEmpty)
+                            const SizedBox(height: 16),
                           if (todayShoutoutTitle != null && todayShoutoutTitle!.isNotEmpty)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

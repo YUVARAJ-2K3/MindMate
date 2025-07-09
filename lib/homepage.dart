@@ -6,7 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'favorite_page.dart';
 import 'journal_page.dart';
-import 'vault_page.dart';
+import 'vault_password.dart';
 import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -222,7 +222,7 @@ class _HomePageState extends State<HomePage> {
   List<Widget> get _pages => [
     _buildHomeContent(),
     const JournalPage(),
-    const VaultPage(),
+    const VaultPasswordPage(),
     const FavoritePage(),
     const SettingsPage(),
   ];
@@ -514,7 +514,7 @@ class _HomePageState extends State<HomePage> {
                               final time = row['time'] ?? '';
                               final desc = row['desc'] ?? '';
                               if (time.isNotEmpty) {
-                                newSchedule[time] = desc.isNotEmpty
+                                newSchedule[time] = desc.isNotEmptyr
                                     ? desc
                                     : (yesterdaySchedule[time] ?? ''); // Use yesterday's if not edited
                                 newTimes.add(time);
