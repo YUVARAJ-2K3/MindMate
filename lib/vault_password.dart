@@ -54,43 +54,6 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Decorative leaves (optional, add if you have assets)
-            Positioned(
-              top: 0,
-              left: 0,
-              child: Image.asset(
-                'assets/leaf_top_left.png',
-                width: 120,
-                height: 120,
-              ),
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Image.asset(
-                'assets/leaf_top_right.png',
-                width: 120,
-                height: 120,
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              child: Image.asset(
-                'assets/leaf_bottom_left.png',
-                width: 120,
-                height: 120,
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Image.asset(
-                'assets/leaf_bottom_right.png',
-                width: 120,
-                height: 120,
-              ),
-            ),
             // Main content
             Center(
               child: isLoading
@@ -244,22 +207,25 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
                                 ),
                                 const SizedBox(height: 24),
                                 // Privacy note
-                                const Row(
+                                Row(
                                   children: [
-                                    Icon(
-                                      Icons.lock_outline,
-                                      size: 18,
-                                      color: Color(0xFFB0AEB1),
+                                    Transform.translate(
+                                      offset: Offset(6, -8),
+                                      child: Icon(
+                                        Icons.lock,
+                                        size: 20,
+                                        color: Color(0xFFB0AEB1),
+                                      ),
                                     ),
-                                    SizedBox(width: 8),
+                                    SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
                                         'Your information is private and protected.\nYour secrets are safe here. We\'ve got your back',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 12,
                                           color: Color(0xFF7B7B7B),
                                         ),
-                                        textAlign: TextAlign.left,
+                                        textAlign: TextAlign.center,
                                       ),
                                     ),
                                   ],
