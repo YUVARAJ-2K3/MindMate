@@ -9,6 +9,7 @@ import 'dart:async';
 import 'custom_snackbar.dart';
 import 'enter_details_page.dart';
 import 'shoutout_page.dart';
+import 'vault_password.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,7 +60,9 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkUserStatus() async {
-    await Future.delayed(const Duration(milliseconds: 500)); // for splash effect
+    await Future.delayed(
+      const Duration(milliseconds: 500),
+    ); // for splash effect
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       Navigator.pushReplacement(
@@ -76,8 +79,17 @@ class _SplashScreenState extends State<SplashScreen> {
       );
       return;
     }
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
-    if (userDoc.exists && userDoc.data() != null && userDoc.data()!['name'] != null && userDoc.data()!['ageGroup'] != null && userDoc.data()!['phone'] != null && userDoc.data()!['city'] != null && userDoc.data()!['country'] != null) {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(username)
+        .get();
+    if (userDoc.exists &&
+        userDoc.data() != null &&
+        userDoc.data()!['name'] != null &&
+        userDoc.data()!['ageGroup'] != null &&
+        userDoc.data()!['phone'] != null &&
+        userDoc.data()!['city'] != null &&
+        userDoc.data()!['country'] != null) {
       Navigator.pushReplacementNamed(context, '/selectFavPerson');
     } else {
       Navigator.pushReplacementNamed(context, '/enterDetails');
@@ -88,9 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: Color(0xFFFDE7EF),
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
@@ -145,8 +155,17 @@ class _LoginPageState extends State<LoginPage> {
         );
         // Check if user details exist in Firestore
         String username = email.split('@')[0];
-        var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
-        if (userDoc.exists && userDoc.data() != null && userDoc.data()!['name'] != null && userDoc.data()!['ageGroup'] != null && userDoc.data()!['phone'] != null && userDoc.data()!['city'] != null && userDoc.data()!['country'] != null) {
+        var userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(username)
+            .get();
+        if (userDoc.exists &&
+            userDoc.data() != null &&
+            userDoc.data()!['name'] != null &&
+            userDoc.data()!['ageGroup'] != null &&
+            userDoc.data()!['phone'] != null &&
+            userDoc.data()!['city'] != null &&
+            userDoc.data()!['country'] != null) {
           // Details exist, skip EnterDetailsPage
           Navigator.pushReplacementNamed(context, '/selectFavPerson');
         } else {
@@ -192,8 +211,17 @@ class _LoginPageState extends State<LoginPage> {
         }
         // Check if user details exist in Firestore
         String username = user.email!.split('@')[0];
-        var userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
-        if (userDoc.exists && userDoc.data() != null && userDoc.data()!['name'] != null && userDoc.data()!['ageGroup'] != null && userDoc.data()!['phone'] != null && userDoc.data()!['city'] != null && userDoc.data()!['country'] != null) {
+        var userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(username)
+            .get();
+        if (userDoc.exists &&
+            userDoc.data() != null &&
+            userDoc.data()!['name'] != null &&
+            userDoc.data()!['ageGroup'] != null &&
+            userDoc.data()!['phone'] != null &&
+            userDoc.data()!['city'] != null &&
+            userDoc.data()!['country'] != null) {
           // Details exist, skip EnterDetailsPage
           Navigator.pushReplacementNamed(context, '/selectFavPerson');
         } else {
@@ -459,6 +487,17 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ],
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VaultPasswordPage(),
+                    ),
+                  );
+                },
+                child: Text('Go to Vault Password'),
               ),
             ],
           ),
