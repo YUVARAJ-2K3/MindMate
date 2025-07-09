@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'custom_snackbar.dart';
 import 'enter_details_page.dart';
+import 'shoutout_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,15 @@ class MyApp extends StatelessWidget {
       routes: {
         '/enterDetails': (context) => EnterDetailsPage(),
         '/selectFavPerson': (context) => RegFavPage(),
+        '/shoutout': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
+          return ShoutoutPage(
+            title: args['title'],
+            description: args['description'],
+            dateKey: args['dateKey'],
+            userId: args['userId'],
+          );
+        },
       },
     );
   }

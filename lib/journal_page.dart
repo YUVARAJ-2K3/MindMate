@@ -24,6 +24,10 @@ class _JournalPageState extends State<JournalPage> {
   String entryTitle = '';
   String entryDescription = '';
   int streak = 0;
+  String? todayShoutoutTitle;
+  String? todayShoutoutDescription;
+  String? yesterdayShoutoutTitle;
+  bool? yesterdayFeelBetter;
 
   String? get userId {
     final user = FirebaseAuth.instance.currentUser;
@@ -34,6 +38,8 @@ class _JournalPageState extends State<JournalPage> {
   void initState() {
     super.initState();
     _loadTodayJournal();
+    _loadTodayShoutout();
+    _loadYesterdayShoutout();
     _scheduleMidnightReset();
   }
 
@@ -125,6 +131,53 @@ class _JournalPageState extends State<JournalPage> {
     }
   }
 
+  Future<void> _loadTodayShoutout() async {
+    if (userId == null) return;
+    final todayKey = _dateKey(DateTime.now());
+    final doc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('shoutouts').doc(todayKey).get();
+    if (doc.exists) {
+      setState(() {
+        todayShoutoutTitle = doc['title'] ?? '';
+        todayShoutoutDescription = doc['description'] ?? '';
+      });
+    } else {
+      setState(() {
+        todayShoutoutTitle = null;
+        todayShoutoutDescription = null;
+      });
+    }
+  }
+
+  Future<void> _loadYesterdayShoutout() async {
+    if (userId == null) return;
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final yesterdayKey = _dateKey(yesterday);
+    final doc = await FirebaseFirestore.instance
+        .collection('users').doc(userId)
+        .collection('shoutouts').doc(yesterdayKey).get();
+    if (doc.exists) {
+      setState(() {
+        yesterdayShoutoutTitle = doc['title'] ?? '';
+        yesterdayFeelBetter = doc['feelBetter'];
+      });
+    } else {
+      setState(() {
+        yesterdayShoutoutTitle = null;
+        yesterdayFeelBetter = null;
+      });
+    }
+  }
+
+  void _resetShoutoutLocal() {
+    setState(() {
+      todayShoutoutTitle = null;
+      todayShoutoutDescription = null;
+      yesterdayShoutoutTitle = null;
+    });
+  }
+
   void _scheduleMidnightReset() {
     final now = DateTime.now();
     final tomorrow = DateTime(now.year, now.month, now.day + 1);
@@ -137,8 +190,10 @@ class _JournalPageState extends State<JournalPage> {
         showCongrats = false;
         // Do not reset streak here, as it is managed by Firestore
       });
-      _scheduleMidnightReset(); // Reschedule for the next day
-      _loadTodayJournal(); // Load new day's journal
+      _resetShoutoutLocal();
+      _scheduleMidnightReset(); 
+      _loadTodayJournal(); 
+      _loadTodayShoutout(); 
     });
   }
 
@@ -149,6 +204,49 @@ class _JournalPageState extends State<JournalPage> {
   void dispose() {
     problemController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveShoutout() async {
+    if (userId == null || problemController.text.trim().isEmpty) {
+      showCustomSnackBar(context, 'Please enter a problem.');
+      return;
+    }
+    try {
+      final problemText = problemController.text.trim();
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('shoutouts')
+          .add({
+        'problem': problemText,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      showCustomSnackBar(context, 'Shoutout added!');
+      problemController.clear();
+      setState(() {
+        selectedIssue = problemText;
+      });
+    } catch (e) {
+      showCustomSnackBar(context, 'Failed to add shoutout.');
+    }
+  }
+
+  Future<void> _setYesterdayFeelBetter(bool value) async {
+    if (userId == null) return;
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final yesterdayKey = _dateKey(yesterday);
+    try {
+      await FirebaseFirestore.instance
+          .collection('users').doc(userId)
+          .collection('shoutouts').doc(yesterdayKey)
+          .update({'feelBetter': value});
+      setState(() {
+        yesterdayFeelBetter = value;
+      });
+      showCustomSnackBar(context, 'Response saved!');
+    } catch (e) {
+      showCustomSnackBar(context, 'Failed to save response.');
+    }
   }
 
   @override
@@ -484,7 +582,7 @@ class _JournalPageState extends State<JournalPage> {
                                                     }
                                                   }
                                                 : () {
-                                                    showCustomSnackBar(context, "You can only write or edit today's journal.");
+                                                    showCustomSnackBar(context, "You can only write or  today's journal.");
                                                   },
                                             child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 18, color: Colors.white)),
                                           ),
@@ -540,39 +638,21 @@ class _JournalPageState extends State<JournalPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Problem Corner',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "What's Weighing on your Mind?",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: problemController,
-                            decoration: InputDecoration(
-                              hintText: 'Type your problem here...',
-                              filled: true,
-                              fillColor: const Color(0xFFFFF8E1),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Colors.grey),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFDA8D7A),
-                                  width: 2,
-                                ),
-                              ),
+                          if (todayShoutoutTitle != null && todayShoutoutTitle!.isNotEmpty)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Today\'s Shoutout:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Text(todayShoutoutTitle ?? '', style: const TextStyle(fontSize: 16)),
+                                if (todayShoutoutDescription != null && todayShoutoutDescription!.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(todayShoutoutDescription ?? '', style: const TextStyle(fontSize: 14, color: Colors.black54)),
+                                  ),
+                                const SizedBox(height: 16),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 16),
                           Center(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -585,77 +665,98 @@ class _JournalPageState extends State<JournalPage> {
                                   vertical: 13,
                                 ),
                               ),
-                              onPressed: () {},
-                              child: const Text(
-                                'Add',
-                                style: TextStyle(fontSize: 14, color: Colors.white),
+                              onPressed: () async {
+                                // Navigate to shoutout page for add/edit
+                                final result = await Navigator.pushNamed(context, '/shoutout', arguments: {
+                                  'title': todayShoutoutTitle,
+                                  'description': todayShoutoutDescription,
+                                  'dateKey': _dateKey(DateTime.now()),
+                                  'userId': userId,
+                                });
+                                if (result == true) {
+                                  _loadTodayShoutout();
+                                  _loadYesterdayShoutout();
+                                }
+                              },
+                              child: Text(
+                                (todayShoutoutTitle != null && todayShoutoutTitle!.isNotEmpty) ? 'Edit' : 'Add',
+                                style: const TextStyle(fontSize: 14, color: Colors.white),
                               ),
                             ),
                           ),
                           const SizedBox(height: 18),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Color(0xFFD9A05B)),
-                            ),
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Do You Feel Better Now About',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  selectedIssue,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    color: Color(0xFFD9A05B),
-                                    fontWeight: FontWeight.w500,
+                          if (yesterdayShoutoutTitle != null && yesterdayShoutoutTitle!.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Color(0xFFD9A05B)),
+                              ),
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'Do You Feel Better Now About',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFDA8D7A),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          feelBetter = true;
-                                        });
-                                      },
-                                      child: const Text('Yes', style: TextStyle(fontSize: 15, color: Colors.white)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    yesterdayShoutoutTitle ?? '',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFFD9A05B),
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    const SizedBox(width: 16),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFDA8D7A),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: yesterdayFeelBetter == true ? Color(0xFFE89C6D) : Color(0xFFF9D7C7),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(24),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
                                         ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+                                        onPressed: () => _setYesterdayFeelBetter(true),
+                                        child: const Text('Yes', style: TextStyle(fontSize: 15, color: Colors.white)),
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          feelBetter = false;
-                                        });
-                                      },
-                                      child: const Text('No', style: TextStyle(fontSize: 15, color: Colors.white)),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      const SizedBox(width: 16),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: yesterdayFeelBetter == false ? Color(0xFFE89C6D) : Color(0xFFF9D7C7),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(24),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+                                        ),
+                                        onPressed: () => _setYesterdayFeelBetter(false),
+                                        child: const Text('No', style: TextStyle(fontSize: 15, color: Colors.white)),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                          if (yesterdayShoutoutTitle == null || yesterdayShoutoutTitle!.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Color(0xFFD9A05B)),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'No shoutout recorded yesterday.',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFD9A05B)),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
