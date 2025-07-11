@@ -522,7 +522,7 @@ class _JournalPageState extends State<JournalPage> {
                                                 ),
                                               ],
                                             ),
-                                          const SizedBox(height: 28),
+                                          const SizedBox(height: 22),
                                           Container(
                                             decoration: BoxDecoration(
                                               gradient: LinearGradient(
@@ -537,16 +537,17 @@ class _JournalPageState extends State<JournalPage> {
                                                   Color(0xFF9B611C), // 100%
                                                 ],
                                               ),
-                                              borderRadius: BorderRadius.circular(80),
+                                              borderRadius: BorderRadius.circular(32),
                                             ),
+                                            height: 30,
                                             child: ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.transparent,
                                                 shadowColor: Colors.transparent,
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(80),
+                                                  borderRadius: BorderRadius.circular(32),
                                                 ),
-                                                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 0),
+                                                padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 0),
                                               ),
                                               onPressed: DateTime.now().year == selectedDate.year && DateTime.now().month == selectedDate.month && DateTime.now().day == selectedDate.day
                                                   ? () async {
@@ -599,7 +600,7 @@ class _JournalPageState extends State<JournalPage> {
                                                   : () {
                                                       showCustomSnackBar(context, "You can only write or  today's journal.");
                                                     },
-                                              child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 18, color: Colors.white)),
+                                              child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 16, color: Colors.white)),
                                             ),
                                           ),
                                         ],
