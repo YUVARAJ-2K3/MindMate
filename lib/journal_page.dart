@@ -28,6 +28,8 @@ class _JournalPageState extends State<JournalPage> {
   String? todayShoutoutDescription;
   String? yesterdayShoutoutTitle;
   bool? yesterdayFeelBetter;
+  bool showFeelBetterCongrats = false;
+  bool showFeelBetterComfort = false;
 
   String? get userId {
     final user = FirebaseAuth.instance.currentUser;
@@ -189,6 +191,9 @@ class _JournalPageState extends State<JournalPage> {
         entryDescription = '';
         showCongrats = false;
         // Do not reset streak here, as it is managed by Firestore
+        showFeelBetterCongrats = false;
+        showFeelBetterComfort = false;
+        yesterdayFeelBetter = null;
       });
       _resetShoutoutLocal();
       _scheduleMidnightReset(); 
@@ -232,21 +237,14 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _setYesterdayFeelBetter(bool value) async {
-    if (userId == null) return;
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    final yesterdayKey = _dateKey(yesterday);
-    try {
-      await FirebaseFirestore.instance
-          .collection('users').doc(userId)
-          .collection('shoutouts').doc(yesterdayKey)
-          .update({'feelBetter': value});
-      setState(() {
-        yesterdayFeelBetter = value;
-      });
-      showCustomSnackBar(context, 'Response saved!');
-    } catch (e) {
-      showCustomSnackBar(context, 'Failed to save response.');
-    }
+    setState(() {
+      yesterdayFeelBetter = value;
+      if (value == true) {
+        showFeelBetterCongrats = true;
+      } else {
+        showFeelBetterComfort = true;
+      }
+    });
   }
 
   @override
@@ -525,66 +523,84 @@ class _JournalPageState extends State<JournalPage> {
                                               ],
                                             ),
                                           const SizedBox(height: 28),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFFD9A05B),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(80),
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+                                                colors: [
+                                                  Color(0xFFA86F1F), // 0%
+                                                  Color(0xFFC98C2B), // 25%
+                                                  Color(0xFFEFC162), // 50%
+                                                  Color(0xFFD9943C), // 75%
+                                                  Color(0xFF9B611C), // 100%
+                                                ],
                                               ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 0),
+                                              borderRadius: BorderRadius.circular(80),
                                             ),
-                                            onPressed: DateTime.now().year == selectedDate.year && DateTime.now().month == selectedDate.month && DateTime.now().day == selectedDate.day
-                                                ? () async {
-                                                    await _loadJournalForDate(selectedDate);
-                                                    if (hasEntry) {
-                                                      // Edit mode
-                                                      final result = await Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) => JournalEntryPage(
-                                                            date: selectedDate,
-                                                            streak: streak,
-                                                            title: entryTitle,
-                                                            description: entryDescription,
-                                                            readOnly: false,
+                                            child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.transparent,
+                                                shadowColor: Colors.transparent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(80),
+                                                ),
+                                                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 0),
+                                              ),
+                                              onPressed: DateTime.now().year == selectedDate.year && DateTime.now().month == selectedDate.month && DateTime.now().day == selectedDate.day
+                                                  ? () async {
+                                                      await _loadJournalForDate(selectedDate);
+                                                      if (hasEntry) {
+                                                        // Edit mode
+                                                        final result = await Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) => JournalEntryPage(
+                                                              date: selectedDate,
+                                                              streak: streak,
+                                                              title: entryTitle,
+                                                              description: entryDescription,
+                                                              readOnly: false,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      );
-                                                      if (result is Map) {
-                                                        setState(() {
-                                                          hasEntry = true;
-                                                          entryTitle = result['title'] ?? '';
-                                                          entryDescription = result['description'] ?? '';
-                                                          showCongrats = true;
-                                                        });
-                                                        _saveJournal(entryTitle, entryDescription, selectedDate);
-                                                      }
-                                                    } else {
-                                                      // Write mode
-                                                      final result = await Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) => JournalEntryPage(
-                                                            date: selectedDate,
-                                                            streak: streak,
+                                                        );
+                                                        if (result is Map) {
+                                                          setState(() {
+                                                            hasEntry = true;
+                                                            entryTitle = result['title'] ?? '';
+                                                            entryDescription = result['description'] ?? '';
+                                                            showCongrats = true;
+                                                          });
+                                                          _saveJournal(entryTitle, entryDescription, selectedDate);
+                                                        }
+                                                      } else {
+                                                        // Write mode
+                                                        final result = await Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) => JournalEntryPage(
+                                                              date: selectedDate,
+                                                              streak: streak,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      );
-                                                      if (result is Map) {
-                                                        setState(() {
-                                                          hasEntry = true;
-                                                          entryTitle = result['title'] ?? '';
-                                                          entryDescription = result['description'] ?? '';
-                                                          showCongrats = true;
-                                                        });
-                                                        _saveJournal(entryTitle, entryDescription, selectedDate);
+                                                        );
+                                                        if (result is Map) {
+                                                          setState(() {
+                                                            hasEntry = true;
+                                                            entryTitle = result['title'] ?? '';
+                                                            entryDescription = result['description'] ?? '';
+                                                            showCongrats = true;
+                                                          });
+                                                          _saveJournal(entryTitle, entryDescription, selectedDate);
+                                                        }
                                                       }
                                                     }
-                                                  }
-                                                : () {
-                                                    showCustomSnackBar(context, "You can only write or  today's journal.");
-                                                  },
-                                            child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 18, color: Colors.white)),
+                                                  : () {
+                                                      showCustomSnackBar(context, "You can only write or  today's journal.");
+                                                    },
+                                              child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 18, color: Colors.white)),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -676,12 +692,10 @@ class _JournalPageState extends State<JournalPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFDA8D7A),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                                  borderRadius: BorderRadius.circular(80),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 57,
-                                  vertical: 13,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 0),
+                                elevation: 0,
                               ),
                               onPressed: () async {
                                 // Navigate to shoutout page for add/edit
@@ -698,7 +712,7 @@ class _JournalPageState extends State<JournalPage> {
                               },
                               child: Text(
                                 (todayShoutoutTitle != null && todayShoutoutTitle!.isNotEmpty) ? 'Edit' : 'Add',
-                                style: const TextStyle(fontSize: 14, color: Colors.white),
+                                style: const TextStyle(fontSize: 18, color: Colors.white),
                               ),
                             ),
                           ),
@@ -710,54 +724,127 @@ class _JournalPageState extends State<JournalPage> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Color(0xFFD9A05B)),
+                                border: Border.all(color: Color(0xFFDA8D7A)),
                               ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Do You Feel Better Now About',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    yesterdayShoutoutTitle ?? '',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      color: Color(0xFFD9A05B),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: yesterdayFeelBetter == true ? Color(0xFFE89C6D) : Color(0xFFF9D7C7),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(24),
+                              child: showFeelBetterCongrats
+                                  ? SizedBox(
+                                      height: 180,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Text(
+                                            'Great!',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black,
+                                            ),
+                                            textAlign: TextAlign.center,
                                           ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
-                                        ),
-                                        onPressed: () => _setYesterdayFeelBetter(true),
-                                        child: const Text('Yes', style: TextStyle(fontSize: 15, color: Colors.white)),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: yesterdayFeelBetter == false ? Color(0xFFE89C6D) : Color(0xFFF9D7C7),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(24),
+                                          const SizedBox(height: 8),
+                                          const Text(
+                                            "That's A Small Win&\nEvery Win Matters ",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.black,
+                                            ),
+                                            textAlign: TextAlign.center,
                                           ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
-                                        ),
-                                        onPressed: () => _setYesterdayFeelBetter(false),
-                                        child: const Text('No', style: TextStyle(fontSize: 15, color: Colors.white)),
+                                          const SizedBox(height: 16),
+                                          const Text(
+                                            '💗',
+                                            style: TextStyle(fontSize: 28),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                    )
+                                  : showFeelBetterComfort
+                                    ? SizedBox(
+                                        height: 180,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Text(
+                                              "It's Ok To Not Be Okay! It Will Be Fine Soon",
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                              '💗',
+                                              style: TextStyle(fontSize: 28),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : Column(
+                                        children: [
+                                          const Text(
+                                            'Do You Feel Better Now About',
+                                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            yesterdayShoutoutTitle ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 22,
+                                              color: Color(0xFFDA8D7A),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 18),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                width: 90,
+                                                height: 40,
+                                                child: ElevatedButton(
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Color(0xFFDA8D7A),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(32),
+                                                    ),
+                                                    elevation: 0,
+                                                  ),
+                                                  onPressed: () => _setYesterdayFeelBetter(true),
+                                                  child: const Text(
+                                                    'Yes',
+                                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              SizedBox(
+                                                width: 90,
+                                                height: 40,
+                                                child: ElevatedButton(
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Color(0xFFDA8D7A),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(32),
+                                                    ),
+                                                    elevation: 0,
+                                                  ),
+                                                  onPressed: () => _setYesterdayFeelBetter(false),
+                                                  child: const Text(
+                                                    'No',
+                                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                             ),
                           if (yesterdayShoutoutTitle == null || yesterdayShoutoutTitle!.isEmpty)
                             Container(
@@ -766,12 +853,12 @@ class _JournalPageState extends State<JournalPage> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Color(0xFFD9A05B)),
+                                border: Border.all(color: Color(0xFFDA8D7A)),
                               ),
                               child: const Center(
                                 child: Text(
                                   'No shoutout recorded yesterday.',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFD9A05B)),
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFDA8D7A)),
                                 ),
                               ),
                             ),
