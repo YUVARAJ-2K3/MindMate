@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class EnterDetailsPage extends StatefulWidget {
   @override
@@ -265,6 +266,15 @@ class _EnterDetailsPageState extends State<EnterDetailsPage> {
       if (existing['phone'] == null) updateData['phone'] = '$_countryCode ${_phoneController.text.trim()}';
       if (existing['city'] == null) updateData['city'] = _cityController.text.trim();
       if (existing['country'] == null) updateData['country'] = _country;
+      String profileImageUrl = '';
+      if (_profileImage != null) {
+        final storageRef = FirebaseStorage.instance.ref().child('profile_images/$username.jpg');
+        await storageRef.putFile(_profileImage!);
+        profileImageUrl = await storageRef.getDownloadURL();
+      } else {
+        profileImageUrl = 'https://firebasestorage.googleapis.com/v0/b/mindmate-2025.firebasestorage.app/o/logo.png?alt=media&token=25c8c1a6-d30a-40c5-b84d-75327cd45ee5';
+      }
+      updateData['profileImage'] = profileImageUrl;
       if (updateData.isNotEmpty) {
         await userDocRef.update(updateData);
       }
