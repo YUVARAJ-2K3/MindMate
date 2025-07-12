@@ -13,6 +13,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:async';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 part 'vault.g.dart';
 
@@ -46,8 +47,6 @@ class _VaultPageState extends State<VaultPage> {
     return DateFormat('dd MMMM, yyyy | HH:mm').format(dt);
   }
 
-  List<VoiceNote> _voiceNotes = [];
-  late Box<VoiceNote> _voiceNoteBox;
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isRecording = false;
@@ -61,24 +60,14 @@ class _VaultPageState extends State<VaultPage> {
   @override
   void initState() {
     super.initState();
-    _initHiveAndLoad();
-  }
-
-  Future<void> _initHiveAndLoad() async {
-    await initHive();
-    _voiceNoteBox = Hive.box<VoiceNote>('voice_notes');
-    setState(() {
-      _voiceNotes = _voiceNoteBox.values.toList().reversed.toList();
-    });
-  }
-
-  Future<void> _fetchVoiceNotes() async {
-    setState(() {
-      _voiceNotes = _voiceNoteBox.values.toList().reversed.toList();
-    });
   }
 
   Future<void> _startRecording() async {
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      print('No microphone permission!');
+      return;
+    }
     final dir = await getApplicationDocumentsDirectory();
     final filePath = '${dir.path}/${const Uuid().v4()}.m4a';
     await _recorder.start(const RecordConfig(), path: filePath);
@@ -109,7 +98,6 @@ class _VaultPageState extends State<VaultPage> {
       duration: duration ?? Duration.zero,
     );
     await FirebaseFirestore.instance.collection('users').doc(username).collection('voice_notes').doc(id).set(note.toMap());
-    _fetchVoiceNotes();
   }
 
   void _playVoiceNote(VoiceNote note) async {
@@ -187,7 +175,6 @@ class _VaultPageState extends State<VaultPage> {
     if (user?.email == null) return;
     final username = user!.email!.split('@')[0];
     await FirebaseFirestore.instance.collection('users').doc(username).collection('voice_notes').doc(note.id).update({'title': newTitle});
-    _fetchVoiceNotes();
   }
 
   Future<void> _deleteVoiceNote(VoiceNote note) async {
@@ -200,10 +187,14 @@ class _VaultPageState extends State<VaultPage> {
     await ref.delete();
     final file = File(note.localPath);
     if (await file.exists()) await file.delete();
-    _fetchVoiceNotes();
   }
 
-  void _startFloatingRecording() async {
+  Future<void> _startFloatingRecording() async {
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      print("Microphone permission denied");
+      return;
+    }
     final dir = await getApplicationDocumentsDirectory();
     final filePath = '${dir.path}/${const Uuid().v4()}.m4a';
     await _recorder.start(const RecordConfig(), path: filePath);
@@ -220,9 +211,11 @@ class _VaultPageState extends State<VaultPage> {
   }
 
   Future<void> _stopFloatingRecordingAndSave() async {
+    print('Attempting to stop recording...');
     String? path;
     try {
       path = await _recorder.stop();
+      print('Recorder stopped, path: $path');
     } catch (e) {
       print('Error stopping recorder: $e');
     } finally {
@@ -231,10 +224,15 @@ class _VaultPageState extends State<VaultPage> {
         _isFloatingRecording = false;
       });
     }
-    if (path == null) return;
+    if (path == null) {
+      print('No path returned from recorder.stop()');
+      return;
+    }
     try {
       final file = File(path);
+      print('File exists: ${await file.exists()}');
       final duration = await _audioPlayer.setSourceDeviceFile(path).then((_) => _audioPlayer.getDuration());
+      print('Duration: $duration');
       final id = const Uuid().v4();
       final now = DateTime.now();
       final title = DateFormat('yyyyMMdd_HHmmss').format(now);
@@ -246,8 +244,8 @@ class _VaultPageState extends State<VaultPage> {
         date: now,
         duration: duration ?? Duration.zero,
       );
-      await _voiceNoteBox.add(note);
-      _fetchVoiceNotes();
+      await Hive.box<VoiceNote>('voice_notes').add(note);
+      print('Voice note added to Hive');
     } catch (e) {
       print('Error saving voice note: $e');
     }
@@ -364,7 +362,9 @@ class _VaultPageState extends State<VaultPage> {
                               type: FileType.custom,
                               allowedExtensions: ['mp3', 'm4a', 'wav', 'aac','opus','ogg'],
                             );
+                            print('File picker result: $result');
                             if (result != null && result.files.single.path != null) {
+                              print('Picked file path: ${result.files.single.path}');
                               final file = File(result.files.single.path!);
                               final id = const Uuid().v4();
                               final audioPlayer = AudioPlayer();
@@ -377,22 +377,38 @@ class _VaultPageState extends State<VaultPage> {
                                 date: DateTime.now(),
                                 duration: duration ?? Duration.zero,
                               );
-                              await _voiceNoteBox.add(note);
-                              _fetchVoiceNotes();
+                              await Hive.box<VoiceNote>('voice_notes').add(note);
+                              print('Voice note added to Hive from file picker');
                             }
                           },
                           isRecording: _isRecording,
                         ),
                         SizedBox(height: 8),
-                        ..._voiceNotes.take(2).map((note) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: _VoiceNoteItem(
-                            note: note,
-                            isPlaying: _currentPlayingId == note.id && _isPlaying,
-                            onPlay: () => _playVoiceNote(note),
-                            onMenu: () => _showVoiceNoteMenu(note),
-                          ),
-                        )),
+                        ValueListenableBuilder(
+                          valueListenable: Hive.box<VoiceNote>('voice_notes').listenable(),
+                          builder: (context, Box<VoiceNote> box, _) {
+                            final notes = box.values.toList().reversed.toList();
+                            if (notes.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                child: Center(child: Text('No audio files uploaded')),
+                              );
+                            }
+                            return Column(
+                              children: [
+                                ...notes.take(2).map((note) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: _VoiceNoteItem(
+                                    note: note,
+                                    isPlaying: _currentPlayingId == note.id && _isPlaying,
+                                    onPlay: () => _playVoiceNote(note),
+                                    onMenu: () => _showVoiceNoteMenu(note),
+                                  ),
+                                )),
+                              ],
+                            );
+                          },
+                        ),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -403,7 +419,7 @@ class _VaultPageState extends State<VaultPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => AllVoiceNotesPage(
-                                      notes: _voiceNotes,
+                                      notes: Hive.box<VoiceNote>('voice_notes').values.toList().reversed.toList(),
                                       onPlay: (note) => _playVoiceNote(note),
                                       onMenu: (note) => _showVoiceNoteMenu(note),
                                       currentPlayingId: _currentPlayingId,

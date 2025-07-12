@@ -9,10 +9,17 @@ import 'dart:async';
 import 'custom_snackbar.dart';
 import 'enter_details_page.dart';
 import 'shoutout_page.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'duration_adapter.dart';
+import 'vault.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await Hive.initFlutter();
+  Hive.registerAdapter(DurationAdapter());
+  Hive.registerAdapter(VoiceNoteAdapter());
+  await Hive.openBox<VoiceNote>('voice_notes');
   runApp(const MyApp());
 }
 
