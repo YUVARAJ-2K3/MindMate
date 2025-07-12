@@ -132,6 +132,10 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
           .collection('users')
           .doc(username)
           .set({'vaultPasswordHash': hash}, SetOptions(merge: true));
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(username)
+          .set({'vaultPrevLastViewed': null, 'vaultLastViewed': FieldValue.serverTimestamp()}, SetOptions(merge: true));
       setState(() {
         vaultPasswordHash = hash;
         isCreating = false;
@@ -155,6 +159,19 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
     final hash = _hashPassword(pass);
     if (hash == vaultPasswordHash) {
       setState(() { errorText = null; });
+      final username = FirebaseAuth.instance.currentUser!.email!.split('@')[0];
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(username)
+          .get();
+      final prev = userDoc.data()?['vaultLastViewed'];
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(username)
+          .set({
+            'vaultPrevLastViewed': prev,
+            'vaultLastViewed': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Vault unlocked!')),
       );
@@ -194,6 +211,19 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
         ),
       );
       if (isAuthenticated) {
+        final username = FirebaseAuth.instance.currentUser!.email!.split('@')[0];
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(username)
+            .get();
+        final prev = userDoc.data()?['vaultLastViewed'];
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(username)
+            .set({
+              'vaultPrevLastViewed': prev,
+              'vaultLastViewed': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => VaultPage()),

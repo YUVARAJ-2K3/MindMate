@@ -9,7 +9,6 @@ import 'dart:async';
 import 'custom_snackbar.dart';
 import 'enter_details_page.dart';
 import 'shoutout_page.dart';
-import 'vault_password.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
