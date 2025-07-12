@@ -13,12 +13,14 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
   bool _obscureText = true;
   final TextEditingController _passwordController = TextEditingController();
   String? name;
+  String? profileImageUrl;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchName();
+    _fetchProfileImage();
   }
 
   Future<void> _fetchName() async {
@@ -31,11 +33,41 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
           .get();
       setState(() {
         name = doc.data()?['name'] ?? username;
-        isLoading = false;
       });
     } else {
       setState(() {
         name = 'User';
+      });
+    }
+  }
+
+  Future<void> _fetchProfileImage() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user?.email != null) {
+        final username = user!.email!.split('@')[0];
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(username)
+            .get();
+        
+        if (doc.exists && doc.data() != null) {
+          setState(() {
+            profileImageUrl = doc.data()!['profileImage'];
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
         isLoading = false;
       });
     }
@@ -117,12 +149,27 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: ClipOval(
-                                      child: Image.asset(
-                                        'assets/panda.png',
-                                        width: 56,
-                                        height: 56,
-                                        fit: BoxFit.cover,
-                                      ),
+                                      child: profileImageUrl != null && profileImageUrl!.isNotEmpty
+                                          ? Image.network(
+                                              profileImageUrl!,
+                                              width: 56,
+                                              height: 56,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'assets/panda.png',
+                                                  width: 56,
+                                                  height: 56,
+                                                  fit: BoxFit.cover,
+                                                );
+                                              },
+                                            )
+                                          : Image.asset(
+                                              'assets/panda.png',
+                                              width: 56,
+                                              height: 56,
+                                              fit: BoxFit.cover,
+                                            ),
                                     ),
                                   ),
                                 ),

@@ -600,7 +600,7 @@ class _JournalPageState extends State<JournalPage> {
                                                   : () {
                                                       showCustomSnackBar(context, "You can only write or  today's journal.");
                                                     },
-                                              child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 16, color: Colors.white)),
+                                              child: Text(hasEntry ? 'Edit' : "Let's Write", style: const TextStyle(fontSize: 16, color: Colors.black)),
                                             ),
                                           ),
                                         ],
@@ -660,7 +660,7 @@ class _JournalPageState extends State<JournalPage> {
                             TextField(
                               readOnly: true,
                               decoration: InputDecoration(
-                                hintText: 'Enter here ....',
+                                hintText: 'What\'s Weighing on your mind? ',
                                 filled: true,
                                 fillColor: const Color(0xFFF9D7C7),
                                 border: OutlineInputBorder(
