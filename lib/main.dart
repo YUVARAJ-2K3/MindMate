@@ -488,17 +488,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VaultPasswordPage(),
-                    ),
-                  );
-                },
-                child: Text('Go to Vault Password'),
-              ),
             ],
           ),
         ),

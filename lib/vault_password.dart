@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
+import 'vault.dart';
+import 'package:local_auth/local_auth.dart';
+import 'custom_snackbar.dart';
 
 class VaultPasswordPage extends StatefulWidget {
   const VaultPasswordPage({Key? key}) : super(key: key);
@@ -12,15 +17,21 @@ class VaultPasswordPage extends StatefulWidget {
 class _VaultPasswordPageState extends State<VaultPasswordPage> {
   bool _obscureText = true;
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _rePasswordController = TextEditingController();
   String? name;
   String? profileImageUrl;
   bool isLoading = true;
+  bool isCreating = false; // true if creating password, false if authenticating
+  String? vaultPasswordHash; // store hash from Firestore
+  String? errorText;
+  final LocalAuthentication auth = LocalAuthentication();
 
   @override
   void initState() {
     super.initState();
     _fetchName();
     _fetchProfileImage();
+    _checkVaultPassword();
   }
 
   Future<void> _fetchName() async {
@@ -73,9 +84,140 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
     }
   }
 
+  Future<void> _checkVaultPassword() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user?.email != null) {
+      final username = user!.email!.split('@')[0];
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(username)
+          .get();
+      setState(() {
+        vaultPasswordHash = doc.data()?['vaultPasswordHash'];
+        isCreating = vaultPasswordHash == null;
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  String _hashPassword(String password) {
+    return sha256.convert(utf8.encode(password)).toString();
+  }
+
+  Future<void> _createVaultPassword() async {
+    setState(() { errorText = null; });
+    final pass = _passwordController.text.trim();
+    final rePass = _rePasswordController.text.trim();
+    if (pass.isEmpty || rePass.isEmpty) {
+      setState(() { errorText = 'Please fill both fields.'; });
+      return;
+    }
+    if (pass.length < 6) {
+      setState(() { errorText = 'Password must be at least 6 characters.'; });
+      return;
+    }
+    if (pass != rePass) {
+      setState(() { errorText = 'Passwords do not match.'; });
+      return;
+    }
+    final user = FirebaseAuth.instance.currentUser;
+    if (user?.email != null) {
+      final username = user!.email!.split('@')[0];
+      final hash = _hashPassword(pass);
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(username)
+          .set({'vaultPasswordHash': hash}, SetOptions(merge: true));
+      setState(() {
+        vaultPasswordHash = hash;
+        isCreating = false;
+        errorText = null;
+        _passwordController.clear();
+        _rePasswordController.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Vault password created!')),
+      );
+    }
+  }
+
+  Future<void> _authenticateVaultPassword() async {
+    setState(() { errorText = null; });
+    final pass = _passwordController.text.trim();
+    if (pass.isEmpty) {
+      setState(() { errorText = 'Please enter your password.'; });
+      return;
+    }
+    final hash = _hashPassword(pass);
+    if (hash == vaultPasswordHash) {
+      setState(() { errorText = null; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Vault unlocked!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => VaultPage()),
+      );
+    } else {
+      setState(() { errorText = 'Incorrect password.'; });
+    }
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      bool isSupported = await auth.isDeviceSupported();
+      bool canCheckBiometrics = await auth.canCheckBiometrics;
+      if (!isSupported) {
+        showCustomSnackBar(
+          context,
+          'Biometric hardware not available on this device.',
+          icon: Icons.error_outline,
+        );
+        return;
+      }
+      if (!canCheckBiometrics) {
+        showCustomSnackBar(
+          context,
+          'No biometrics enrolled. Please set up fingerprint/face unlock in your device settings.',
+          icon: Icons.info_outline,
+        );
+        return;
+      }
+      bool isAuthenticated = await auth.authenticate(
+        localizedReason: 'Unlock your vault with biometrics',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+        ),
+      );
+      if (isAuthenticated) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => VaultPage()),
+        );
+      } else {
+        showCustomSnackBar(
+          context,
+          'Biometric authentication failed',
+          icon: Icons.error_outline,
+        );
+      }
+    } catch (e) {
+      showCustomSnackBar(
+        context,
+        'Biometric authentication error: $e',
+        icon: Icons.error_outline,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _passwordController.dispose();
+    _rePasswordController.dispose();
     super.dispose();
   }
 
@@ -194,65 +336,162 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                // Password field
-                                TextField(
-                                  controller: _passwordController,
-                                  obscureText: _obscureText,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: const Color(0xFFFFE0F0),
-                                    hintText: 'Password',
-                                    prefixIcon: const Icon(
-                                      Icons.lock_outline,
-                                      color: Color(0xFFB39DDB),
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        _obscureText
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
+                                if (isCreating) ...[
+                                  TextField(
+                                    controller: _passwordController,
+                                    obscureText: _obscureText,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: const Color(0xFFFFE0F0),
+                                      hintText: 'Enter Password',
+                                      prefixIcon: const Icon(
+                                        Icons.lock_outline,
+                                        color: Color(0xFFB39DDB),
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _obscureText = !_obscureText;
-                                        });
-                                      },
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 0,
-                                      horizontal: 16,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                // Unlock button
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: () {},
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFDA8D7A),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(32),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscureText
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscureText = !_obscureText;
+                                          });
+                                        },
                                       ),
-                                      elevation: 0,
-                                    ),
-                                    child: const Text(
-                                      'Unlock Now',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 0,
+                                        horizontal: 16,
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 24),
+                                  const SizedBox(height: 16),
+                                  TextField(
+                                    controller: _rePasswordController,
+                                    obscureText: _obscureText,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: const Color(0xFFFFE0F0),
+                                      hintText: 'Re Enter Password',
+                                      prefixIcon: const Icon(
+                                        Icons.lock_outline,
+                                        color: Color(0xFFB39DDB),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscureText
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscureText = !_obscureText;
+                                          });
+                                        },
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 0,
+                                        horizontal: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      onPressed: _createVaultPassword,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFDA8D7A),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(32),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text(
+                                        'Create',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ] else ...[
+                                  TextField(
+                                    controller: _passwordController,
+                                    obscureText: _obscureText,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: const Color(0xFFFFE0F0),
+                                      hintText: 'Password',
+                                      prefixIcon: const Icon(
+                                        Icons.lock_outline,
+                                        color: Color(0xFFB39DDB),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscureText
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscureText = !_obscureText;
+                                          });
+                                        },
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 0,
+                                        horizontal: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      onPressed: _authenticateVaultPassword,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFDA8D7A),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(32),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text(
+                                        'Unlock Now',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                if (errorText != null) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    errorText!,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ],
                                 // Privacy note
                                 Row(
                                   children: [
@@ -279,10 +518,9 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
                                 ),
                                 const SizedBox(height: 24),
                                 // Fingerprint icon
-                                Icon(
-                                  Icons.fingerprint,
-                                  size: 48,
-                                  color: Colors.black87,
+                                IconButton(
+                                  icon: Icon(Icons.fingerprint, size: 40),
+                                  onPressed: _authenticateWithBiometrics,
                                 ),
                               ],
                             ),
