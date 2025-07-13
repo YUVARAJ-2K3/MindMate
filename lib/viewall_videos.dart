@@ -23,7 +23,7 @@ class _ViewAllVideosPageState extends State<ViewAllVideosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 254, 230, 230),
+      backgroundColor: const Color(0xFFFFD9D0),
       body: SafeArea(
         child: Column(
           children: [
@@ -106,7 +106,7 @@ class _VaultSectionCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Color(0xFFFFF8E1),
+        color: Color(0xFFFFF7E9),
         borderRadius: BorderRadius.circular(24),
       ),
       child: child,
@@ -417,7 +417,7 @@ class _VideoListItem extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
-        color: Color(0xFFFDE7EF),
+        color: Color(0xFFFDDED0),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(

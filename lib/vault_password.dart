@@ -254,7 +254,7 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFEBEE),
+      backgroundColor: const Color(0xFFFFD9D4),
       body: SafeArea(
         child: Stack(
           children: [
@@ -286,7 +286,7 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFAD6C9),
+                                    color: const Color(0xFFFDCBB0),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: const Text(
@@ -498,7 +498,7 @@ class _VaultPasswordPageState extends State<VaultPasswordPage> {
                                     child: ElevatedButton(
                                       onPressed: _authenticateVaultPassword,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFDA8D7A),
+                                        backgroundColor: const Color(0xFFE19378),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(32),
                                         ),

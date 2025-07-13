@@ -22,7 +22,6 @@ import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
-
 part 'vault.g.dart';
 
 class VaultPage extends StatefulWidget {
@@ -233,7 +232,7 @@ class _VaultPageState extends State<VaultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 254, 230, 230),
+      backgroundColor: const Color(0xFFFDD5D1),
       body: Stack(
         children: [
           SafeArea(
@@ -262,7 +261,7 @@ class _VaultPageState extends State<VaultPage> {
                         child: Column(
                           children: [
                             Material(
-                              color: Color.fromARGB(255, 254, 230, 230),
+                              color: Color(0xFFFFD9D0),
                               borderRadius: BorderRadius.circular(12),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(8),
@@ -274,8 +273,8 @@ class _VaultPageState extends State<VaultPage> {
                                   );
                                 },
                                 child: SizedBox(
-                                  width: 60,
-                                  height: 60,
+                                  width: 40,
+                                  height: 40,
                                   child: Center(
                                     child: Icon(Icons.logout, color: Colors.pinkAccent, size: 25),
                                   ),
@@ -306,7 +305,7 @@ class _VaultPageState extends State<VaultPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Color(0xFFFFF8E1),
+                            color: Color(0xFFFFF7E9),
                             borderRadius: BorderRadius.circular(5),
                           ),
                           child: FutureBuilder<String>(
@@ -330,7 +329,7 @@ class _VaultPageState extends State<VaultPage> {
                     icon: Icons.star,
                     text: '    The things you say today \n become memories tomorrow',
                     title: 'Voice Notes',
-                    color: Color(0xFFFAD6C9),
+                    color: Color(0xFFFDCBB0),
                   ),
                   _VaultSectionCard(
                     child: Column(
@@ -425,7 +424,7 @@ class _VaultPageState extends State<VaultPage> {
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color.fromARGB(255, 234, 152, 115),
+                                      backgroundColor: const Color(0xFFE19378),
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(20),
@@ -464,9 +463,9 @@ class _VaultPageState extends State<VaultPage> {
                   // Images Section
                   _SectionHeader(
                     icon: Icons.star,
-                    text: 'A picture that heals,\nA memory that hugs',
+                    text: 'A picture that heals,A memory \n                  that hugs',
                     title: 'Images',
-                    color: Color(0xFFFAD6C9),
+                    color: Color(0xFFFDCBB0),
                   ),
                   _VaultSectionCard(
                     child: Column(
@@ -534,9 +533,9 @@ class _VaultPageState extends State<VaultPage> {
                   // Videos Section
                   _SectionHeader(
                     icon: Icons.star,
-                    text: "Your life's best scenes,\nsaved securely",
+                    text: "Your life's best scenes, saved securely",
                     title: 'Videos',
-                    color: Color(0xFFFAD6C9),
+                    color: Color(0xFFFDCBB0),
                   ),
                   _VaultSectionCard(
                     child: Column(
@@ -665,7 +664,7 @@ class _VaultSectionCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Color(0xFFFFF8E1),
+        color: Color(0xFFFFF7E9),
         borderRadius: BorderRadius.circular(24),
       ),
       child: child,
@@ -718,7 +717,7 @@ class _VoiceNoteItem extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
-        color: Color(0xFFFDE7EF),
+        color: Color(0xFFFDDED0),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -784,7 +783,7 @@ class _ImageListItem extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
-        color: Color(0xFFFDE7EF),
+        color: Color(0xFFFFDED0),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -859,7 +858,7 @@ class _VideoItem extends StatelessWidget {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: Color(0xFFFDE7EF),
+            color: Color(0xFFFDDED0),
             borderRadius: BorderRadius.circular(16),
             image: DecorationImage(
               image: AssetImage(asset),
@@ -893,7 +892,7 @@ class _ViewAllButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onTap,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 234, 152, 115),
+            backgroundColor: const Color(0xFFE19378),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -1393,7 +1392,7 @@ class _VideoListItem extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
-        color: Color(0xFFFDE7EF),
+        color: Color(0xFFFDDED0),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
