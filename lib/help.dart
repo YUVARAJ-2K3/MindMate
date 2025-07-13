@@ -8,171 +8,145 @@ class HelpPage extends StatefulWidget {
 }
 
 class _HelpPageState extends State<HelpPage> {
-  final List<bool> _expanded = List.generate(7, (_) => false);
-
-  final List<String> _questions = [
-    'What is MindMate?',
-    'Is MindMate free to use?',
-    'Can I customize my experience?',
-    'Is my data safe?',
-    'Who can use this app?',
-    'Do I need an internet connection?',
-    'How often should I use MindMate?',
+  final List<_FaqItem> _faqs = [
+    _FaqItem('What is MindMate?', 'MindMate is your personal mental wellness companion, designed to help you manage your thoughts, feelings, and daily reflections.'),
+    _FaqItem('Is MindMate free to use?', 'Yes, MindMate is completely free to use.'),
+    _FaqItem('Can I customize my experience?', 'Absolutely! MindMate allows you to personalize your experience to suit your needs.'),
+    _FaqItem('Is my data safe?', 'Your data is private and securely stored. Only you have access to your information.'),
+    _FaqItem('Who can use this app?', 'Anyone looking to improve their mental wellness can use MindMate.'),
+    _FaqItem('Do I need an internet connection?', 'An internet connection is required for syncing and backup, but some features may work offline.'),
+    _FaqItem('How often should I use MindMate?', 'You can use MindMate as often as you like. Daily use is recommended for best results.'),
   ];
+  List<bool> _expanded = List.generate(7, (index) => false);
 
   @override
   Widget build(BuildContext context) {
-    final Size screen = MediaQuery.of(context).size;
-    final double scale = screen.width < 400 ? 0.75 : 0.8;
-    final double cardWidth = screen.width * scale;
-    final double cardHeight = screen.height * scale * 0.92;
-    final double cardRadius = 32 * scale;
-    final double headerHeight = 70 * scale;
-    final double cardPadding = 16 * scale;
-    final Color backgroundColor = const Color(0xFFFDE7EF);
-    final Color cardColor = const Color(0xFFFEF7F0);
-    final Color headerGradientStart = const Color(0xFFE7BBAA);
-    final Color headerGradientEnd = const Color(0x00E7BBAA);
-    final Color borderColor = const Color(0xFFE7BBAA);
-    final Color questionTextColor = Colors.black;
-    final Color iconColor = Colors.black;
-    final double questionFontSize = 16 * scale;
-    final double questionContainerRadius = 12 * scale;
-    final double questionContainerPadding = 10 * scale;
-    final double questionContainerMargin = 8 * scale;
-    final double dropdownIconSize = 24 * scale;
-    final double headerFontSize = 22 * scale;
-    final double backIconSize = 22 * scale;
-
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: Center(
-        child: Container(
-          width: cardWidth,
-          height: cardHeight,
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(cardRadius),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Container(
-                height: headerHeight,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(cardRadius),
-                    topRight: Radius.circular(cardRadius),
-                  ),
-                  gradient: LinearGradient(
-                    colors: [headerGradientStart, headerGradientEnd],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: iconColor,
-                          size: backIconSize,
-                        ),
-                        onPressed: () => Navigator.of(context).maybePop(),
-                      ),
+      backgroundColor: const Color(0xFFFFD9D0),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 32.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7E9),
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Column(
+              children: [
+                // Header with gradient and rounded top corners
+                Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
                     ),
-                    Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 12 * scale),
-                        child: Text(
-                          'Help',
-                          style: TextStyle(
-                            fontSize: headerFontSize,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black,
-                            fontFamily: 'Montserrat',
-                            letterSpacing: 0.1,
-                          ),
-                        ),
-                      ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFFDD5D1), Color(0xFFE7BBAA)],
                     ),
-                  ],
-                ),
-              ),
-              // FAQ List
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: cardPadding,
-                    vertical: cardPadding,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_questions.length, (index) {
-                      return Container(
-                        margin: EdgeInsets.only(
-                          bottom: questionContainerMargin,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: borderColor, width: 1.2),
-                          borderRadius: BorderRadius.circular(
-                            questionContainerRadius,
-                          ),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(
-                              questionContainerRadius,
+                  padding: const EdgeInsets.only(top: 16, left: 8, right: 8, bottom: 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'Help',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
                             ),
-                            onTap: () {
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 48), // To balance the back button
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                    itemCount: _faqs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      return Material(
+                        color: Colors.transparent,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: Color(0xFFFFDDD1), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ExpansionPanelList(
+                            elevation: 0,
+                            expandedHeaderPadding: EdgeInsets.zero,
+                            expansionCallback: (panelIndex, isExpanded) {
                               setState(() {
                                 _expanded[index] = !_expanded[index];
                               });
                             },
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                vertical: questionContainerPadding,
-                                horizontal: questionContainerPadding,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _questions[index],
-                                      style: TextStyle(
-                                        fontSize: questionFontSize,
+                            animationDuration: const Duration(milliseconds: 250),
+                            children: [
+                              ExpansionPanel(
+                                canTapOnHeader: true,
+                                isExpanded: _expanded[index],
+                                headerBuilder: (context, isExpanded) {
+                                  return ListTile(
+                                    title: Text(
+                                      _faqs[index].question,
+                                      style: const TextStyle(
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w500,
-                                        color: questionTextColor,
-                                        fontFamily: 'Montserrat',
+                                        color: Colors.black,
                                       ),
                                     ),
+                                  );
+                                },
+                                body: Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                  child: Text(
+                                    _faqs[index].answer,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black87,
+                                    ),
                                   ),
-                                  Icon(
-                                    _expanded[index]
-                                        ? Icons.expand_less_rounded
-                                        : Icons.expand_more_rounded,
-                                    color: iconColor,
-                                    size: dropdownIconSize,
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       );
-                    }),
+                    },
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+class _FaqItem {
+  final String question;
+  final String answer;
+  _FaqItem(this.question, this.answer);
 }

@@ -645,7 +645,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               style: TextStyle(
                                 fontFamily: fieldFont,
                                 fontWeight: FontWeight.w400,
-                                fontSize: fieldFontSize,
+                              fontSize: fieldFontSize,
                                 color: fieldTextColor.withOpacity(0.7),
                                 letterSpacing: 0.1,
                               ),
@@ -883,7 +883,7 @@ class _EditableField extends StatelessWidget {
               width: double.infinity,
               height: 1.2,
               color: borderColor,
-            ),
+          ),
         ],
       ),
     );
