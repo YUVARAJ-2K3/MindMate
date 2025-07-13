@@ -3,6 +3,8 @@ import 'edit_profile_page.dart';
 import 'notifications_settings_page.dart';
 import 'help.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'custom_snackbar.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -10,7 +12,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDE7EF),
+      backgroundColor: const Color(0xFFFDD5D1),
       body: Stack(
         children: [
           // Main content
@@ -48,7 +50,36 @@ class SettingsPage extends StatelessWidget {
                       _SettingsOption(
                         icon: Icons.phonelink_lock,
                         label: 'Change password',
-                        onTap: () {},
+                        onTap: () async {
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user == null) return;
+                          final username = user.email?.split('@')[0];
+                          if (username == null) return;
+                          final userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+                          final provider = userDoc.data()?['provider'] ?? 'email';
+                          if (provider == 'google') {
+                            showCustomSnackBar(
+                              context,
+                              'Password change is not available for Google sign-in accounts.',
+                              icon: Icons.info_outline,
+                            );
+                            return;
+                          }
+                          try {
+                            await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
+                            showCustomSnackBar(
+                              context,
+                              'Password reset email sent!',
+                              icon: Icons.check_circle_outline,
+                            );
+                          } catch (e) {
+                            showCustomSnackBar(
+                              context,
+                              'Failed to send reset email: \\$e',
+                              icon: Icons.error_outline,
+                            );
+                          }
+                        },
                       ),
                       const SizedBox(height: 16),
                       _SettingsOption(

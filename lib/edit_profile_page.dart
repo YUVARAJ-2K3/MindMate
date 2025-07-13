@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'custom_snackbar.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -19,15 +24,217 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _cityController = TextEditingController();
 
   // Dropdown values
-  String _ageGroup = 'Teen';
-  String _country = 'India';
-  final List<String> _ageGroups = ['Child', 'Teen', 'Adult', 'Senior'];
-  final List<String> _countries = ['India', 'USA', 'UK', 'Canada'];
+  String? _ageGroup;
+  String? _country;
+  String? _countryCode;
+  final List<Map<String, String>> _ageGroups = [
+    {'label': '🧒 Teenagers(13-17)', 'value': 'Teenagers(13-17)'},
+    {'label': '🧑 Young adults(18-24)', 'value': 'Young adults(18-24)'},
+    {'label': '🧔 Adults(25-34)', 'value': 'Adults(25-34)'},
+    {'label': '👨‍🦳 Mid-aged(35-54)', 'value': 'Mid-aged(35-54)'},
+    {'label': '👴 Seniors(55 & above)', 'value': 'Seniors(55 & above)'},
+  ];
+  final List<Map<String, String>> _countries = [
+  {'name': 'Afghanistan', 'code': '+93', 'flag': '🇦🇫'},
+  {'name': 'Albania', 'code': '+355', 'flag': '🇦🇱'},
+  {'name': 'Algeria', 'code': '+213', 'flag': '🇩🇿'},
+  {'name': 'Andorra', 'code': '+376', 'flag': '🇦🇩'},
+  {'name': 'Angola', 'code': '+244', 'flag': '🇦🇴'},
+  {'name': 'Argentina', 'code': '+54', 'flag': '🇦🇷'},
+  {'name': 'Armenia', 'code': '+374', 'flag': '🇦🇲'},
+  {'name': 'Australia', 'code': '+61', 'flag': '🇦🇺'},
+  {'name': 'Austria', 'code': '+43', 'flag': '🇦🇹'},
+  {'name': 'Azerbaijan', 'code': '+994', 'flag': '🇦🇿'},
+  {'name': 'Bahamas', 'code': '+1-242', 'flag': '🇧🇸'},
+  {'name': 'Bahrain', 'code': '+973', 'flag': '🇧🇭'},
+  {'name': 'Bangladesh', 'code': '+880', 'flag': '🇧🇩'},
+  {'name': 'Barbados', 'code': '+1-246', 'flag': '🇧🇧'},
+  {'name': 'Belarus', 'code': '+375', 'flag': '🇧🇾'},
+  {'name': 'Belgium', 'code': '+32', 'flag': '🇧🇪'},
+  {'name': 'Belize', 'code': '+501', 'flag': '🇧🇿'},
+  {'name': 'Benin', 'code': '+229', 'flag': '🇧🇯'},
+  {'name': 'Bhutan', 'code': '+975', 'flag': '🇧🇹'},
+  {'name': 'Bolivia', 'code': '+591', 'flag': '🇧🇴'},
+  {'name': 'Bosnia and Herzegovina', 'code': '+387', 'flag': '🇧🇦'},
+  {'name': 'Botswana', 'code': '+267', 'flag': '🇧🇼'},
+  {'name': 'Brazil', 'code': '+55', 'flag': '🇧🇷'},
+  {'name': 'Brunei', 'code': '+673', 'flag': '🇧🇳'},
+  {'name': 'Bulgaria', 'code': '+359', 'flag': '🇧🇬'},
+  {'name': 'Burkina Faso', 'code': '+226', 'flag': '🇧🇫'},
+  {'name': 'Burundi', 'code': '+257', 'flag': '🇧🇮'},
+  {'name': 'Cambodia', 'code': '+855', 'flag': '🇰🇭'},
+  {'name': 'Cameroon', 'code': '+237', 'flag': '🇨🇲'},
+  {'name': 'Canada', 'code': '+1', 'flag': '🇨🇦'},
+  {'name': 'Cape Verde', 'code': '+238', 'flag': '🇨🇻'},
+  {'name': 'Central African Republic', 'code': '+236', 'flag': '🇨🇫'},
+  {'name': 'Chad', 'code': '+235', 'flag': '🇹🇩'},
+  {'name': 'Chile', 'code': '+56', 'flag': '🇨🇱'},
+  {'name': 'China', 'code': '+86', 'flag': '🇨🇳'},
+  {'name': 'Colombia', 'code': '+57', 'flag': '🇨🇴'},
+  {'name': 'Comoros', 'code': '+269', 'flag': '🇰🇲'},
+  {'name': 'Congo', 'code': '+242', 'flag': '🇨🇬'},
+  {'name': 'Costa Rica', 'code': '+506', 'flag': '🇨🇷'},
+  {'name': 'Croatia', 'code': '+385', 'flag': '🇭🇷'},
+  {'name': 'Cuba', 'code': '+53', 'flag': '🇨🇺'},
+  {'name': 'Cyprus', 'code': '+357', 'flag': '🇨🇾'},
+  {'name': 'Czech Republic', 'code': '+420', 'flag': '🇨🇿'},
+  {'name': 'Denmark', 'code': '+45', 'flag': '🇩🇰'},
+  {'name': 'Djibouti', 'code': '+253', 'flag': '🇩🇯'},
+  {'name': 'Dominica', 'code': '+1-767', 'flag': '🇩🇲'},
+  {'name': 'Dominican Republic', 'code': '+1-809', 'flag': '🇩🇴'},
+  {'name': 'Ecuador', 'code': '+593', 'flag': '🇪🇨'},
+  {'name': 'Egypt', 'code': '+20', 'flag': '🇪🇬'},
+  {'name': 'El Salvador', 'code': '+503', 'flag': '🇸🇻'},
+  {'name': 'Equatorial Guinea', 'code': '+240', 'flag': '🇬🇶'},
+  {'name': 'Eritrea', 'code': '+291', 'flag': '🇪🇷'},
+  {'name': 'Estonia', 'code': '+372', 'flag': '🇪🇪'},
+  {'name': 'Eswatini', 'code': '+268', 'flag': '🇸🇿'},
+  {'name': 'Ethiopia', 'code': '+251', 'flag': '🇪🇹'},
+  {'name': 'Fiji', 'code': '+679', 'flag': '🇫🇯'},
+  {'name': 'Finland', 'code': '+358', 'flag': '🇫🇮'},
+  {'name': 'France', 'code': '+33', 'flag': '🇫🇷'},
+  {'name': 'Gabon', 'code': '+241', 'flag': '🇬🇦'},
+  {'name': 'Gambia', 'code': '+220', 'flag': '🇬🇲'},
+  {'name': 'Georgia', 'code': '+995', 'flag': '🇬🇪'},
+  {'name': 'Germany', 'code': '+49', 'flag': '🇩🇪'},
+  {'name': 'Ghana', 'code': '+233', 'flag': '🇬🇭'},
+  {'name': 'Greece', 'code': '+30', 'flag': '🇬🇷'},
+  {'name': 'Grenada', 'code': '+1-473', 'flag': '🇬🇩'},
+  {'name': 'Guatemala', 'code': '+502', 'flag': '🇬🇹'},
+  {'name': 'Guinea', 'code': '+224', 'flag': '🇬🇳'},
+  {'name': 'Guinea-Bissau', 'code': '+245', 'flag': '🇬🇼'},
+  {'name': 'Guyana', 'code': '+592', 'flag': '🇬🇾'},
+  {'name': 'Haiti', 'code': '+509', 'flag': '🇭🇹'},
+  {'name': 'Honduras', 'code': '+504', 'flag': '🇭🇳'},
+  {'name': 'Hungary', 'code': '+36', 'flag': '🇭🇺'},
+  {'name': 'Iceland', 'code': '+354', 'flag': '🇮🇸'},
+  {'name': 'India', 'code': '+91', 'flag': '🇮🇳'},
+  {'name': 'Indonesia', 'code': '+62', 'flag': '🇮🇩'},
+  {'name': 'Iran', 'code': '+98', 'flag': '🇮🇷'},
+  {'name': 'Iraq', 'code': '+964', 'flag': '🇮🇶'},
+  {'name': 'Ireland', 'code': '+353', 'flag': '🇮🇪'},
+  {'name': 'Israel', 'code': '+972', 'flag': '🇮🇱'},
+  {'name': 'Italy', 'code': '+39', 'flag': '🇮🇹'},
+  {'name': 'Jamaica', 'code': '+1-876', 'flag': '🇯🇲'},
+  {'name': 'Japan', 'code': '+81', 'flag': '🇯🇵'},
+  {'name': 'Jordan', 'code': '+962', 'flag': '🇯🇴'},
+  {'name': 'Kazakhstan', 'code': '+7', 'flag': '🇰🇿'},
+  {'name': 'Kenya', 'code': '+254', 'flag': '🇰🇪'},
+  {'name': 'Kiribati', 'code': '+686', 'flag': '🇰🇮'},
+  {'name': 'Kuwait', 'code': '+965', 'flag': '🇰🇼'},
+  {'name': 'Kyrgyzstan', 'code': '+996', 'flag': '🇰🇬'},
+  {'name': 'Laos', 'code': '+856', 'flag': '🇱🇦'},
+  {'name': 'Latvia', 'code': '+371', 'flag': '🇱🇻'},
+  {'name': 'Lebanon', 'code': '+961', 'flag': '🇱🇧'},
+  {'name': 'Lesotho', 'code': '+266', 'flag': '🇱🇸'},
+  {'name': 'Liberia', 'code': '+231', 'flag': '🇱🇷'},
+  {'name': 'Libya', 'code': '+218', 'flag': '🇱🇾'},
+  {'name': 'Liechtenstein', 'code': '+423', 'flag': '🇱🇮'},
+  {'name': 'Lithuania', 'code': '+370', 'flag': '🇱🇹'},
+  {'name': 'Luxembourg', 'code': '+352', 'flag': '🇱🇺'},
+  {'name': 'Madagascar', 'code': '+261', 'flag': '🇲🇬'},
+  {'name': 'Malawi', 'code': '+265', 'flag': '🇲🇼'},
+  {'name': 'Malaysia', 'code': '+60', 'flag': '🇲🇾'},
+  {'name': 'Maldives', 'code': '+960', 'flag': '🇲🇻'},
+  {'name': 'Mali', 'code': '+223', 'flag': '🇲🇱'},
+  {'name': 'Malta', 'code': '+356', 'flag': '🇲🇹'},
+  {'name': 'Marshall Islands', 'code': '+692', 'flag': '🇲🇭'},
+  {'name': 'Mauritania', 'code': '+222', 'flag': '🇲🇷'},
+  {'name': 'Mauritius', 'code': '+230', 'flag': '🇲🇺'},
+  {'name': 'Mexico', 'code': '+52', 'flag': '🇲🇽'},
+  {'name': 'Micronesia', 'code': '+691', 'flag': '🇫🇲'},
+  {'name': 'Moldova', 'code': '+373', 'flag': '🇲🇩'},
+  {'name': 'Monaco', 'code': '+377', 'flag': '🇲🇨'},
+  {'name': 'Mongolia', 'code': '+976', 'flag': '🇲🇳'},
+  {'name': 'Montenegro', 'code': '+382', 'flag': '🇲🇪'},
+  {'name': 'Morocco', 'code': '+212', 'flag': '🇲🇦'},
+  {'name': 'Mozambique', 'code': '+258', 'flag': '🇲🇿'},
+  {'name': 'Myanmar', 'code': '+95', 'flag': '🇲🇲'},
+  {'name': 'Namibia', 'code': '+264', 'flag': '🇳🇦'},
+  {'name': 'Nauru', 'code': '+674', 'flag': '🇳🇷'},
+  {'name': 'Nepal', 'code': '+977', 'flag': '🇳🇵'},
+  {'name': 'Netherlands', 'code': '+31', 'flag': '🇳🇱'},
+  {'name': 'New Zealand', 'code': '+64', 'flag': '🇳🇿'},
+  {'name': 'Nicaragua', 'code': '+505', 'flag': '🇳🇮'},
+  {'name': 'Niger', 'code': '+227', 'flag': '🇳🇪'},
+  {'name': 'Nigeria', 'code': '+234', 'flag': '🇳🇬'},
+  {'name': 'North Korea', 'code': '+850', 'flag': '🇰🇵'},
+  {'name': 'North Macedonia', 'code': '+389', 'flag': '🇲🇰'},
+  {'name': 'Norway', 'code': '+47', 'flag': '🇳🇴'},
+  {'name': 'Oman', 'code': '+968', 'flag': '🇴🇲'},
+  {'name': 'Pakistan', 'code': '+92', 'flag': '🇵🇰'},
+  {'name': 'Palau', 'code': '+680', 'flag': '🇵🇼'},
+  {'name': 'Palestine', 'code': '+970', 'flag': '🇵🇸'},
+  {'name': 'Panama', 'code': '+507', 'flag': '🇵🇦'},
+  {'name': 'Papua New Guinea', 'code': '+675', 'flag': '🇵🇬'},
+  {'name': 'Paraguay', 'code': '+595', 'flag': '🇵🇾'},
+  {'name': 'Peru', 'code': '+51', 'flag': '🇵🇪'},
+  {'name': 'Philippines', 'code': '+63', 'flag': '🇵🇭'},
+  {'name': 'Poland', 'code': '+48', 'flag': '🇵🇱'},
+  {'name': 'Portugal', 'code': '+351', 'flag': '🇵🇹'},
+  {'name': 'Qatar', 'code': '+974', 'flag': '🇶🇦'},
+  {'name': 'Romania', 'code': '+40', 'flag': '🇷🇴'},
+  {'name': 'Russia', 'code': '+7', 'flag': '🇷🇺'},
+  {'name': 'Rwanda', 'code': '+250', 'flag': '🇷🇼'},
+  {'name': 'Saint Kitts and Nevis', 'code': '+1-869', 'flag': '🇰🇳'},
+  {'name': 'Saint Lucia', 'code': '+1-758', 'flag': '🇱🇨'},
+  {'name': 'Saint Vincent and the Grenadines', 'code': '+1-784', 'flag': '🇻🇨'},
+  {'name': 'Samoa', 'code': '+685', 'flag': '🇼🇸'},
+  {'name': 'San Marino', 'code': '+378', 'flag': '🇸🇲'},
+  {'name': 'Sao Tome and Principe', 'code': '+239', 'flag': '🇸🇹'},
+  {'name': 'Saudi Arabia', 'code': '+966', 'flag': '🇸🇦'},
+  {'name': 'Senegal', 'code': '+221', 'flag': '🇸🇳'},
+  {'name': 'Serbia', 'code': '+381', 'flag': '🇷🇸'},
+  {'name': 'Seychelles', 'code': '+248', 'flag': '🇸🇨'},
+  {'name': 'Sierra Leone', 'code': '+232', 'flag': '🇸🇱'},
+  {'name': 'Singapore', 'code': '+65', 'flag': '🇸🇬'},
+  {'name': 'Slovakia', 'code': '+421', 'flag': '🇸🇰'},
+  {'name': 'Slovenia', 'code': '+386', 'flag': '🇸🇮'},
+  {'name': 'Solomon Islands', 'code': '+677', 'flag': '🇸🇧'},
+  {'name': 'Somalia', 'code': '+252', 'flag': '🇸🇴'},
+  {'name': 'South Africa', 'code': '+27', 'flag': '🇿🇦'},
+  {'name': 'South Korea', 'code': '+82', 'flag': '🇰🇷'},
+  {'name': 'South Sudan', 'code': '+211', 'flag': '🇸🇸'},
+  {'name': 'Spain', 'code': '+34', 'flag': '🇪🇸'},
+  {'name': 'Sri Lanka', 'code': '+94', 'flag': '🇱🇰'},
+  {'name': 'Sudan', 'code': '+249', 'flag': '🇸🇩'},
+  {'name': 'Suriname', 'code': '+597', 'flag': '🇸🇷'},
+  {'name': 'Sweden', 'code': '+46', 'flag': '🇸🇪'},
+  {'name': 'Switzerland', 'code': '+41', 'flag': '🇨🇭'},
+  {'name': 'Syria', 'code': '+963', 'flag': '🇸🇾'},
+  {'name': 'Taiwan', 'code': '+886', 'flag': '🇹🇼'},
+  {'name': 'Tajikistan', 'code': '+992', 'flag': '🇹🇯'},
+  {'name': 'Tanzania', 'code': '+255', 'flag': '🇹🇿'},
+  {'name': 'Thailand', 'code': '+66', 'flag': '🇹🇭'},
+  {'name': 'Togo', 'code': '+228', 'flag': '🇹🇬'},
+  {'name': 'Tonga', 'code': '+676', 'flag': '🇹🇴'},
+  {'name': 'Trinidad and Tobago', 'code': '+1-868', 'flag': '🇹🇹'},
+  {'name': 'Tunisia', 'code': '+216', 'flag': '🇹🇳'},
+  {'name': 'Turkey', 'code': '+90', 'flag': '🇹🇷'},
+  {'name': 'Turkmenistan', 'code': '+993', 'flag': '🇹🇲'},
+  {'name': 'Tuvalu', 'code': '+688', 'flag': '🇹🇻'},
+  {'name': 'Uganda', 'code': '+256', 'flag': '🇺🇬'},
+  {'name': 'Ukraine', 'code': '+380', 'flag': '🇺🇦'},
+  {'name': 'United Arab Emirates', 'code': '+971', 'flag': '🇦🇪'},
+  {'name': 'United Kingdom', 'code': '+44', 'flag': '🇬🇧'},
+  {'name': 'United States', 'code': '+1', 'flag': '🇺🇸'},
+  {'name': 'Uruguay', 'code': '+598', 'flag': '🇺🇾'},
+  {'name': 'Uzbekistan', 'code': '+998', 'flag': '🇺🇿'},
+  {'name': 'Vanuatu', 'code': '+678', 'flag': '🇻🇺'},
+  {'name': 'Vatican City', 'code': '+39', 'flag': '🇻🇦'},
+  {'name': 'Venezuela', 'code': '+58', 'flag': '🇻🇪'},
+  {'name': 'Vietnam', 'code': '+84', 'flag': '🇻🇳'},
+  {'name': 'Yemen', 'code': '+967', 'flag': '🇾🇪'},
+  {'name': 'Zambia', 'code': '+260', 'flag': '🇿🇲'},
+  {'name': 'Zimbabwe', 'code': '+263', 'flag': '🇿🇼'},
+];
 
   bool _loading = true;
   bool _saving = false;
   User? _currentUser;
   bool _editingName = false;
+  File? _profileImageFile;
+  String? _profileImageUrl;
 
   @override
   void initState() {
@@ -37,48 +244,61 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    // Get user data from Firebase Auth first, then fallback to SharedPreferences
-    final userName =
-        _currentUser?.displayName ?? prefs.getString('profile_name') ?? 'User';
-    final userEmail =
-        _currentUser?.email ??
-        prefs.getString('profile_email') ??
-        'user@example.com';
-    final userPhotoUrl = _currentUser?.photoURL;
-
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final username = user.email?.split('@')[0];
+    if (username == null) return;
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(username).get();
+    final data = userDoc.data() ?? {};
     setState(() {
-      _nameController.text = userName;
-      _emailController.text = userEmail;
-      _phoneController.text =
-          prefs.getString('profile_phone') ?? '+91 12345 6789';
-      _cityController.text = prefs.getString('profile_city') ?? 'Chennai';
-      _ageGroup = prefs.getString('profile_ageGroup') ?? 'Teen';
-      _country = prefs.getString('profile_country') ?? 'India';
+      _nameController.text = data['name'] ?? user.displayName ?? 'User';
+      _emailController.text = user.email ?? 'user@example.com';
+      _phoneController.text = data['phone'] ?? '';
+      _cityController.text = data['city'] ?? '';
+      _ageGroup = data['ageGroup'] ?? null;
+      _country = data['country'] ?? null;
+      if (_country != null) {
+        final found = _countries.firstWhere((c) => c['name'] == _country, orElse: () => _countries[0]);
+        _countryCode = found['code'];
+      }
+      _profileImageUrl = data['profileImage'];
       _loading = false;
     });
   }
 
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        _profileImageFile = File(picked.path);
+      });
+    }
+  }
+
   Future<void> _saveProfile() async {
     setState(() => _saving = true);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_name', _nameController.text);
-    await prefs.setString('profile_email', _emailController.text);
-    await prefs.setString('profile_phone', _phoneController.text);
-    await prefs.setString('profile_city', _cityController.text);
-    await prefs.setString('profile_ageGroup', _ageGroup);
-    await prefs.setString('profile_country', _country);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final username = user.email?.split('@')[0];
+    if (username == null) return;
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(username);
+    Map<String, dynamic> updateData = {
+      'name': _nameController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'city': _cityController.text.trim(),
+      'ageGroup': _ageGroup,
+      'country': _country,
+    };
+    if (_profileImageFile != null) {
+      final storageRef = FirebaseStorage.instance.ref().child('profile_images/$username.jpg');
+      await storageRef.putFile(_profileImageFile!);
+      final url = await storageRef.getDownloadURL();
+      updateData['profileImage'] = url;
+      _profileImageUrl = url;
+    }
+    await userDocRef.set(updateData, SetOptions(merge: true));
     setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Profile saved!',
-          style: TextStyle(fontFamily: 'Montserrat'),
-        ),
-        backgroundColor: Color(0xFFEA8C6E),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showCustomSnackBar(context, 'Profile saved!', icon: Icons.check_circle_outline, backgroundColor: Color(0xFFEA8C6E));
   }
 
   @override
@@ -91,10 +311,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildProfileImage() {
-    final photoUrl = _currentUser?.photoURL;
-    if (photoUrl != null && photoUrl.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: photoUrl,
+    Widget imageWidget;
+    if (_profileImageFile != null) {
+      imageWidget = Image.file(_profileImageFile!, width: 60.0 * scale, height: 60.0 * scale, fit: BoxFit.cover);
+    } else if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      imageWidget = CachedNetworkImage(
+        imageUrl: _profileImageUrl!,
         width: 60.0 * scale,
         height: 60.0 * scale,
         fit: BoxFit.cover,
@@ -126,8 +348,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       );
     } else {
-      // Fallback to default avatar
-      return Container(
+      imageWidget = Container(
         width: 60.0 * scale,
         height: 60.0 * scale,
         decoration: BoxDecoration(
@@ -137,18 +358,39 @@ class _EditProfilePageState extends State<EditProfilePage> {
         child: Icon(Icons.person, size: 30.0 * scale, color: Colors.grey[600]),
       );
     }
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        imageWidget,
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+              ),
+              child: Icon(Icons.edit, size: 18 * scale, color: Color(0xFFB98B6C)),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     // Compact scaling factors
     // Colors
-    const backgroundColor = Color(0xFFFDE7EF);
-    const cardColor = Color(0xFFFCF6ED);
+    const backgroundColor = Color(0xFFFDD5D1);
+    const cardColor = Color(0xFFFFF7E9);
     const headerGradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [Color(0xFFE7BBAA), Color(0x00E7BBAA)],
+      colors: [Color.fromARGB(255, 218, 177, 161), Color(0x00E7BBAA)],
       stops: [0.0, 1.0],
     );
     const labelColor = Color(0xFF8B7B9B);
@@ -304,7 +546,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           width: avatarCircleRadius,
                           height: avatarCircleRadius,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE7BBAA),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -398,28 +639,51 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           children: [
                             // Email
                             _Label('EMAIL', fontSize: labelFontSize),
-                            _EditableField(
+                            TextField(
                               controller: _emailController,
-                              fontSize: fieldFontSize,
-                              underline: true,
-                              textColor: fieldTextColor,
-                              borderColor: borderColor,
-                              fontFamily: fieldFont,
-                              keyboardType: TextInputType.emailAddress,
+                              readOnly: true,
+                              style: TextStyle(
+                                fontFamily: fieldFont,
+                                fontWeight: FontWeight.w400,
+                                fontSize: fieldFontSize,
+                                color: fieldTextColor.withOpacity(0.7),
+                                letterSpacing: 0.1,
+                              ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 0,
+                                  horizontal: 0,
+                                ),
+                              ),
                             ),
                             SizedBox(height: fieldVerticalSpacing),
                             // Age Group
                             _Label('AGE GROUP', fontSize: labelFontSize),
-                            _DropdownField(
-                              icon: ageIcon,
+                            DropdownButtonFormField<String>(
                               value: _ageGroup,
-                              fontSize: fieldFontSize,
-                              textColor: fieldTextColor,
-                              borderColor: borderColor,
-                              fontFamily: fieldFont,
-                              items: _ageGroups,
-                              onChanged: (val) =>
-                                  setState(() => _ageGroup = val!),
+                              items: _ageGroups
+                                  .map((e) => DropdownMenuItem(
+                                        value: e['value'],
+                                        child: Row(
+                                          children: [
+                                            Text(e['label']!, style: TextStyle(fontFamily: fieldFont, fontSize: fieldFontSize, color: fieldTextColor)),
+                                          ],
+                                        ),
+                                      ))
+                                  .toList(),
+                              onChanged: (val) => setState(() => _ageGroup = val),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 0,
+                                  horizontal: 0,
+                                ),
+                              ),
+                              style: TextStyle(fontFamily: fieldFont, fontSize: fieldFontSize, color: fieldTextColor),
+                              dropdownColor: const Color(0xFFFCF6ED),
                             ),
                             SizedBox(height: fieldVerticalSpacing),
                             // Phone
@@ -447,17 +711,85 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             SizedBox(height: fieldVerticalSpacing),
                             // Country
                             _Label('COUNTRY', fontSize: labelFontSize),
-                            _DropdownField(
-                              icon: countryIcon,
-                              value: _country,
-                              fontSize: fieldFontSize,
-                              textColor: fieldTextColor,
-                              borderColor: borderColor,
-                              fontFamily: fieldFont,
-                              items: _countries,
-                              onChanged: (val) =>
-                                  setState(() => _country = val!),
+                            GestureDetector(
+                              onTap: () async {
+                                String search = '';
+                                List<Map<String, String>> filtered = List.from(_countries);
+                                final selected = await showDialog<String>(
+                                  context: context,
+                                  builder: (context) {
+                                    return StatefulBuilder(
+                                      builder: (context, setState) => AlertDialog(
+                                        title: const Text('Select Country'),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            TextField(
+                                              decoration: const InputDecoration(
+                                                hintText: 'Search country',
+                                              ),
+                                              onChanged: (val) {
+                                                setState(() {
+                                                  search = val;
+                                                  filtered = _countries
+                                                      .where((c) => c['name']!.toLowerCase().contains(search.toLowerCase()))
+                                                      .toList();
+                                                });
+                                              },
+                                            ),
+                                            const SizedBox(height: 8),
+                                            SizedBox(
+                                              height: 250,
+                                              width: 300,
+                                              child: ListView.builder(
+                                                itemCount: filtered.length,
+                                                itemBuilder: (context, i) {
+                                                  final c = filtered[i];
+                                                  return ListTile(
+                                                    leading: Text(c['flag'] ?? '', style: const TextStyle(fontSize: 20)),
+                                                    title: Text(c['name'] ?? ''),
+                                                    onTap: () => Navigator.pop(context, c['name']),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                                if (selected != null) {
+                                  setState(() {
+                                    _country = selected;
+                                    _countryCode = _countries.firstWhere((c) => c['name'] == selected)['code'];
+                                  });
+                                }
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                decoration: const BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(color: Color(0xFFE7BBAA)),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(_countries.firstWhere((c) => c['name'] == _country, orElse: () => {'flag': ''})['flag'] ?? '', style: const TextStyle(fontSize: 16)),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        _country ?? 'Select Country',
+                                        style: TextStyle(fontSize: fieldFontSize, fontFamily: fieldFont, color: fieldTextColor),
+                                      ),
+                                    ),
+                                    const Icon(Icons.arrow_drop_down, color: Color(0xFFB98B6C)),
+                                  ],
+                                ),
+                              ),
                             ),
+                            SizedBox(height: fieldVerticalSpacing),
                           ],
                         ),
                       ),
@@ -552,87 +884,6 @@ class _EditableField extends StatelessWidget {
               height: 1.2,
               color: borderColor,
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DropdownField extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final double fontSize;
-  final Color textColor;
-  final Color borderColor;
-  final String fontFamily;
-  final List<String> items;
-  final ValueChanged<String?> onChanged;
-  const _DropdownField({
-    required this.icon,
-    required this.value,
-    required this.fontSize,
-    required this.textColor,
-    required this.borderColor,
-    required this.fontFamily,
-    required this.items,
-    required this.onChanged,
-    super.key,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: borderColor, width: 1.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Color(0xFFB98B6C)),
-          const SizedBox(width: 4),
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              value: value,
-              items: items
-                  .map(
-                    (e) => DropdownMenuItem<String>(
-                      value: e,
-                      child: Text(
-                        e,
-                        style: TextStyle(
-                          fontFamily: fontFamily,
-                          fontWeight: FontWeight.w400,
-                          fontSize: fontSize,
-                          color: textColor,
-                          letterSpacing: 0.1,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: onChanged,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 0,
-                ),
-              ),
-              icon: const Icon(
-                Icons.expand_more,
-                size: 16,
-                color: Color(0xFFB98B6C),
-              ),
-              style: TextStyle(
-                fontFamily: fontFamily,
-                fontWeight: FontWeight.w400,
-                fontSize: fontSize,
-                color: textColor,
-                letterSpacing: 0.1,
-              ),
-              dropdownColor: const Color(0xFFFCF6ED),
-            ),
-          ),
         ],
       ),
     );
