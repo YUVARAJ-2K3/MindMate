@@ -12,6 +12,7 @@ import 'shoutout_page.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'duration_adapter.dart';
 import 'vault.dart';
+import 'image_note.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,9 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(DurationAdapter());
   Hive.registerAdapter(VoiceNoteAdapter());
+  Hive.registerAdapter(ImageNoteAdapter());
   await Hive.openBox<VoiceNote>('voice_notes');
+  await Hive.openBox<ImageNote>('image_notes');
   runApp(const MyApp());
 }
 

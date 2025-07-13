@@ -14,6 +14,8 @@ import 'dart:async';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'image_note.dart';
+import 'viewall_images.dart';
 
 part 'vault.g.dart';
 
@@ -56,6 +58,8 @@ class _VaultPageState extends State<VaultPage> {
   Duration _recordDuration = Duration.zero;
   Timer? _timer;
   String? _currentRecordingPath;
+  String _voiceNoteSearch = '';
+  String _imageSearch = '';
 
   @override
   void initState() {
@@ -140,14 +144,6 @@ class _VaultPageState extends State<VaultPage> {
             onTap: () async {
               Navigator.pop(context);
               _deleteVoiceNote(note);
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.share),
-            title: Text('Share'),
-            onTap: () async {
-              Navigator.pop(context);
-              // Implement share logic here
             },
           ),
         ],
@@ -284,7 +280,7 @@ class _VaultPageState extends State<VaultPage> {
                           children: [
                             Material(
                               color: Color.fromARGB(255, 254, 230, 230),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(8),
                                 onTap: () async {
@@ -295,8 +291,8 @@ class _VaultPageState extends State<VaultPage> {
                                   );
                                 },
                                 child: SizedBox(
-                                  width: 30,
-                                  height: 30,
+                                  width: 60,
+                                  height: 60,
                                   child: Center(
                                     child: Icon(Icons.logout, color: Colors.pinkAccent, size: 25),
                                   ),
@@ -382,13 +378,15 @@ class _VaultPageState extends State<VaultPage> {
                             }
                           },
                           isRecording: _isRecording,
+                          onChanged: (v) => setState(() => _voiceNoteSearch = v),
                         ),
                         SizedBox(height: 8),
                         ValueListenableBuilder(
                           valueListenable: Hive.box<VoiceNote>('voice_notes').listenable(),
                           builder: (context, Box<VoiceNote> box, _) {
                             final notes = box.values.toList().reversed.toList();
-                            if (notes.isEmpty) {
+                            final filteredNotes = notes.where((n) => n.title.toLowerCase().contains(_voiceNoteSearch.toLowerCase())).toList();
+                            if (filteredNotes.isEmpty) {
                               return const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 16.0),
                                 child: Center(child: Text('No audio files uploaded')),
@@ -396,7 +394,7 @@ class _VaultPageState extends State<VaultPage> {
                             }
                             return Column(
                               children: [
-                                ...notes.take(2).map((note) => Padding(
+                                ...filteredNotes.take(2).map((note) => Padding(
                                   padding: const EdgeInsets.only(bottom: 8.0),
                                   child: _VoiceNoteItem(
                                     note: note,
@@ -490,17 +488,63 @@ class _VaultPageState extends State<VaultPage> {
                   _VaultSectionCard(
                     child: Column(
                       children: [
-                        _SearchBar(),
-                        SizedBox(height: 8),
-                        _HorizontalList(
-                          items: [
-                            _ImageItem(label: 'Panda', date: '22 Jun,2025', asset: 'assets/panda.png'),
-                            _ImageItem(label: 'Kitty', date: '22 Jun,2025', asset: 'assets/kitty.png'),
-                            _ImageItem(label: 'Monkey', date: '22 Jun,2025', asset: 'assets/monkey.png'),
-                            _ImageItem(label: 'Iron man', date: '22 Jun,2025', asset: 'assets/ironman.png'),
-                          ],
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _SearchBar(
+                            onAdd: () async {
+                              FilePickerResult? result = await FilePicker.platform.pickFiles(
+                                type: FileType.image,
+                                allowMultiple: false,
+                              );
+                              if (result != null && result.files.single.path != null) {
+                                final file = File(result.files.single.path!);
+                                final id = const Uuid().v4();
+                                final note = ImageNote(
+                                  id: id,
+                                  path: file.path,
+                                  title: result.files.single.name,
+                                  date: DateTime.now(),
+                                );
+                                await Hive.box<ImageNote>('image_notes').add(note);
+                              }
+                            },
+                            onChanged: (v) => setState(() => _imageSearch = v),
+                          ),
                         ),
-                        _ViewAllButton(),
+                        SizedBox(height: 8),
+                        ValueListenableBuilder(
+                          valueListenable: Hive.box<ImageNote>('image_notes').listenable(),
+                          builder: (context, Box<ImageNote> box, _) {
+                            final notes = box.values.toList().reversed.toList();
+                            final filteredNotes = notes.where((n) => n.title.toLowerCase().contains(_imageSearch.toLowerCase())).toList();
+                            if (filteredNotes.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                child: Center(child: Text('No images uploaded')),
+                              );
+                            }
+                            return Column(
+                              children: [
+                                ...filteredNotes.take(2).map((note) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: _ImageListItem(
+                                    note: note,
+                                    onMenu: () => _showImageMenu(context, note),
+                                  ),
+                                )),
+                              ],
+                            );
+                          },
+                        ),
+                        SizedBox(height: 8),
+                        _ViewAllButton(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ViewAllImagesPage()),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -604,7 +648,8 @@ class _VaultSectionCard extends StatelessWidget {
 class _SearchBar extends StatelessWidget {
   final VoidCallback? onAdd;
   final bool isRecording;
-  const _SearchBar({this.onAdd, this.isRecording = false});
+  final Function(String)? onChanged;
+  const _SearchBar({this.onAdd, this.isRecording = false, this.onChanged});
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -628,6 +673,7 @@ class _SearchBar extends StatelessWidget {
           ),
         ),
         style: TextStyle(fontSize: 13),
+        onChanged: onChanged,
       ),
     );
   }
@@ -701,31 +747,72 @@ class _HorizontalList extends StatelessWidget {
   }
 }
 
-class _ImageItem extends StatelessWidget {
-  final String label;
-  final String date;
-  final String asset;
-  const _ImageItem({required this.label, required this.date, required this.asset});
+class _ImageListItem extends StatelessWidget {
+  final ImageNote note;
+  final VoidCallback onMenu;
+  const _ImageListItem({required this.note, required this.onMenu});
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Color(0xFFFDE7EF),
-            borderRadius: BorderRadius.circular(16),
-            image: DecorationImage(
-              image: AssetImage(asset),
-              fit: BoxFit.cover,
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Color(0xFFFDE7EF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => Dialog(
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.black,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        File(note.path),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                File(note.path),
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-        ),
-        SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12)),
-        Text(date, style: TextStyle(fontSize: 10, color: Colors.grey)),
-      ],
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  note.title.length > 10 ? note.title.substring(0, 10) + '...' : note.title,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(DateFormat('dd-MM-yy').format(note.date), style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
+          SizedBox(width: 6),
+          IconButton(
+            icon: Icon(Icons.more_vert, color: Colors.grey),
+            onPressed: onMenu,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -919,6 +1006,52 @@ class _AllVoiceNotesPageState extends State<AllVoiceNotesPage> {
       ),
     );
   }
+}
+
+void _showImageMenu(BuildContext context, ImageNote note) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          leading: Icon(Icons.edit),
+          title: Text('Rename'),
+          onTap: () async {
+            Navigator.pop(context);
+            final newTitle = await _showRenameDialog(context, note.title);
+            if (newTitle != null && newTitle.isNotEmpty) {
+              note.title = newTitle;
+              await note.save();
+            }
+          },
+        ),
+        ListTile(
+          leading: Icon(Icons.delete),
+          title: Text('Delete'),
+          onTap: () async {
+            Navigator.pop(context);
+            await note.delete();
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+Future<String?> _showRenameDialog(BuildContext context, String currentTitle) async {
+  final controller = TextEditingController(text: currentTitle);
+  return showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Rename Image'),
+      content: TextField(controller: controller),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context, controller.text), child: Text('Rename')),
+      ],
+    ),
+  );
 }
 
 @HiveType(typeId: 0)
