@@ -54,7 +54,7 @@ class _ViewAllVideosPageState extends State<ViewAllVideosPage> {
                     final note = VideoNote(
                       id: id,
                       path: file.path,
-                      title: result.files.single.name,
+                      title: capitalizeIfNeeded(result.files.single.name),
                       date: DateTime.now(),
                     );
                     await Hive.box<VideoNote>('video_notes').add(note);
@@ -527,7 +527,7 @@ void _showVideoMenu(BuildContext context, VideoNote note) {
             Navigator.pop(context);
             final newTitle = await _showRenameDialog(context, note.title);
             if (newTitle != null && newTitle.isNotEmpty) {
-              note.title = newTitle;
+              note.title = capitalizeIfNeeded(newTitle);
               await note.save();
             }
           },
@@ -558,4 +558,10 @@ Future<String?> _showRenameDialog(BuildContext context, String currentTitle) asy
       ],
     ),
   );
+}
+
+String capitalizeIfNeeded(String input) {
+  if (input.isEmpty) return input;
+  if (double.tryParse(input[0]) != null) return input;
+  return input[0].toUpperCase() + input.substring(1);
 } 

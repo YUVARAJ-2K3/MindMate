@@ -244,20 +244,23 @@ class _VaultPageState extends State<VaultPage> {
                   // Header image
                   Stack(
                     children: [
-                      Container(
-                        width: double.infinity,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage('assets/vaultbg.png'),
-                            fit: BoxFit.cover,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                        child: Container(
+                          width: double.infinity,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage('assets/vaultbg.png'),
+                              fit: BoxFit.cover,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                          borderRadius: BorderRadius.circular(24),
                         ),
                       ),
                       Positioned(
-                        top: 16,
-                        right: 16,
+                        top: 25,
+                        right: 30,
                         child: Column(
                           children: [
                             Material(
@@ -282,7 +285,29 @@ class _VaultPageState extends State<VaultPage> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text('Logout', style: TextStyle(color: Color.fromARGB(255, 254, 230, 230), fontWeight: FontWeight.w500)),
+                            Stack(
+                              children: [
+                                // Outline
+                                Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    foreground: Paint()
+                                      ..style = PaintingStyle.stroke
+                                      ..strokeWidth = 1.5
+                                      ..color = Colors.white, // Outline color
+                                  ),
+                                ),
+                                // Fill
+                                Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    color: Color(0xFFFFD9D0),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -349,7 +374,7 @@ class _VaultPageState extends State<VaultPage> {
                               final duration = await audioPlayer.setSourceDeviceFile(file.path).then((_) => audioPlayer.getDuration());
                               final note = VoiceNote(
                                 id: id,
-                                title: result.files.single.name,
+                                title: capitalizeIfNeeded(result.files.single.name),
                                 url: file.path,
                                 localPath: file.path,
                                 date: DateTime.now(),
@@ -484,7 +509,7 @@ class _VaultPageState extends State<VaultPage> {
                                 final note = ImageNote(
                                   id: id,
                                   path: file.path,
-                                  title: result.files.single.name,
+                                  title: capitalizeIfNeeded(result.files.single.name),
                                   date: DateTime.now(),
                                 );
                                 await Hive.box<ImageNote>('image_notes').add(note);
@@ -552,7 +577,7 @@ class _VaultPageState extends State<VaultPage> {
                               final note = VideoNote(
                                 id: id,
                                 path: file.path,
-                                title: result.files.single.name,
+                                title: capitalizeIfNeeded(result.files.single.name),
                                 date: DateTime.now(),
                               );
                               await Hive.box<VideoNote>('video_notes').add(note);
@@ -1518,4 +1543,11 @@ void _showVideoMenu(BuildContext context, VideoNote note) {
       ],
     ),
   );
+}
+
+// Utility function to capitalize first letter if not numeric
+String capitalizeIfNeeded(String input) {
+  if (input.isEmpty) return input;
+  if (double.tryParse(input[0]) != null) return input;
+  return input[0].toUpperCase() + input.substring(1);
 } 
