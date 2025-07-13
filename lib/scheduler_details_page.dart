@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 class SchedulerDetailsPage extends StatefulWidget {
   final List<Map<String, String>>? initialSchedule;
@@ -32,7 +34,20 @@ class _SchedulerDetailsPageState extends State<SchedulerDetailsPage> {
     });
   }
 
-  void _save() {
+  void _save() async {
+    // Save to Hive using today's date as key
+    final box = Hive.box('schedulerBox');
+    final todayKey = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    // Convert schedule (List<Map<String, String>>) to Map<String, String>
+    Map<String, String> scheduleMap = {};
+    for (final row in schedule) {
+      final time = row['time'] ?? '';
+      final desc = row['desc'] ?? '';
+      if (time.isNotEmpty) {
+        scheduleMap[time] = desc;
+      }
+    }
+    await box.put(todayKey, scheduleMap);
     Navigator.pop(context, schedule);
   }
 

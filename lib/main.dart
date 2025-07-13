@@ -14,6 +14,7 @@ import 'duration_adapter.dart';
 import 'vault.dart';
 import 'image_note.dart';
 import 'video_note.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ void main() async {
   await Hive.openBox<VoiceNote>('voice_notes');
   await Hive.openBox<ImageNote>('image_notes');
   await Hive.openBox<VideoNote>('video_notes');
+  await Hive.openBox('schedulerBox');
   runApp(const MyApp());
 }
 

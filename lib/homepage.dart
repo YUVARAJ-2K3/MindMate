@@ -8,6 +8,7 @@ import 'favorite_page.dart';
 import 'journal_page.dart';
 import 'vault_password.dart';
 import 'settings_page.dart';
+import 'package:hive/hive.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -120,22 +121,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadScheduler() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('users').doc(userId)
-        .collection('scheduler').doc(todayKey).get();
-    if (doc.exists) {
+    final box = Hive.box('schedulerBox');
+    final todaySchedule = box.get(todayKey);
+    if (todaySchedule != null) {
       setState(() {
-        schedule = Map<String, String>.from(doc['items']);
+        schedule = Map<String, String>.from(todaySchedule);
         times = schedule.keys.toList();
       });
     } else {
       // Try to load yesterday's scheduler if today is empty
-      final yestDoc = await FirebaseFirestore.instance
-          .collection('users').doc(userId)
-          .collection('scheduler').doc(yesterdayKey).get();
-      if (yestDoc.exists) {
+      final yestSchedule = box.get(yesterdayKey);
+      if (yestSchedule != null) {
         setState(() {
-          schedule = Map<String, String>.from(yestDoc['items']);
+          schedule = Map<String, String>.from(yestSchedule);
           times = schedule.keys.toList();
         });
       } else {
@@ -147,10 +145,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
   Future<void> saveScheduler() async {
-    await FirebaseFirestore.instance
-        .collection('users').doc(userId)
-        .collection('scheduler').doc(todayKey)
-        .set({'items': schedule});
+    final box = Hive.box('schedulerBox');
+    await box.put(todayKey, schedule);
   }
 
   Future<void> loadMoods() async {
@@ -190,10 +186,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> saveSchedulerForDate(String dateKey, Map<String, String> schedule) async {
-    await FirebaseFirestore.instance
-        .collection('users').doc(userId)
-        .collection('scheduler').doc(dateKey)
-        .set({'items': schedule});
+    final box = Hive.box('schedulerBox');
+    await box.put(dateKey, schedule);
   }
 
   // --- Reset at Midnight ---
@@ -497,36 +491,8 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           );
-                          if (result != null && result is List) {
-                            // Fetch yesterday's schedule for merging
-                            final yestDoc = await FirebaseFirestore.instance
-                                .collection('users').doc(userId)
-                                .collection('scheduler').doc(yesterdayKey).get();
-                            Map<String, String> yesterdaySchedule = {};
-                            if (yestDoc.exists) {
-                              yesterdaySchedule = Map<String, String>.from(yestDoc['items']);
-                            }
-
-                            // Build the new schedule, merging unchanged times from yesterday
-                            Map<String, String> newSchedule = {};
-                            List<String> newTimes = [];
-                            for (final row in result) {
-                              final time = row['time'] ?? '';
-                              final desc = row['desc'] ?? '';
-                              if (time.isNotEmpty) {
-                                newSchedule[time] = desc.isNotEmptyr
-                                    ? desc
-                                    : (yesterdaySchedule[time] ?? ''); // Use yesterday's if not edited
-                                newTimes.add(time);
-                              }
-                            }
-
-                            setState(() {
-                              schedule = newSchedule;
-                              times = newTimes;
-                            });
-                            saveScheduler();
-                          }
+                          // Always reload from Hive after returning from the details page
+                          await loadScheduler();
                         },
                         child: const Text('Edit'),
                       ),
