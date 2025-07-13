@@ -5,7 +5,7 @@ import 'help.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'custom_snackbar.dart';
-
+import 'about_us.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -98,7 +98,12 @@ class SettingsPage extends StatelessWidget {
                       _SettingsOption(
                         icon: Icons.groups,
                         label: 'About us',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => AboutUsPage()),
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       _SettingsOption(
