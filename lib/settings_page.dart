@@ -1,82 +1,169 @@
 import 'package:flutter/material.dart';
+import 'edit_profile_page.dart';
+import 'notifications_settings_page.dart';
+import 'help.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
-
-  @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> {
-  String? profileImageUrl;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProfileImage();
-  }
-
-  Future<void> _loadProfileImage() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final username = user.email?.split('@')[0];
-        if (username != null) {
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(username)
-              .get();
-          
-          if (userDoc.exists && userDoc.data() != null) {
-            setState(() {
-              profileImageUrl = userDoc.data()!['profileImage'];
-              isLoading = false;
-            });
-          } else {
-            setState(() {
-              isLoading = false;
-            });
-          }
-        }
-      }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 250, 209, 209),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (isLoading)
-                const CircularProgressIndicator()
-              else
-                CircleAvatar(
-                  radius: 80,
-                  backgroundColor: const Color(0xFFE7BFA7),
-                  backgroundImage: profileImageUrl != null && profileImageUrl!.isNotEmpty
-                      ? NetworkImage(profileImageUrl!)
-                      : const AssetImage('assets/logo.png') as ImageProvider,
+      backgroundColor: const Color(0xFFFDE7EF),
+      body: Stack(
+        children: [
+          // Main content
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 60),
+                const SizedBox(height: 32),
+                const Text(
+                  'Settings',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
-              const SizedBox(height: 20),
-              const Text(
-                'Settings Page',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-            ],
+                const SizedBox(height: 32),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      _SettingsOption(
+                        icon: Icons.edit,
+                        label: 'Edit profile',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditProfilePage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _SettingsOption(
+                        icon: Icons.phonelink_lock,
+                        label: 'Change password',
+                        onTap: () {},
+                      ),
+                      const SizedBox(height: 16),
+                      _SettingsOption(
+                        icon: Icons.notifications,
+                        label: 'Notification settings',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NotificationSettingsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _SettingsOption(
+                        icon: Icons.groups,
+                        label: 'About us',
+                        onTap: () {},
+                      ),
+                      const SizedBox(height: 16),
+                      _SettingsOption(
+                        icon: Icons.info,
+                        label: 'Help',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => HelpPage()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _SettingsOption(
+                        icon: Icons.notifications,
+                        label: 'Logout',
+                        onTap: () async {
+                          await FirebaseAuth.instance.signOut();
+                          Navigator.pushReplacementNamed(context, '/');
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.lock_outline,
+                            size: 16,
+                            color: Color(0xFF7B7B7B),
+                          ),
+                          SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'Your information is private and protected. Your secrets are safe here. We\'ve got your back',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF7B7B7B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SettingsOption({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Color(0xFFEA8C6E), width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Color(0xFFEA8C6E), size: 24),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-} 
+}
