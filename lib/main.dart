@@ -13,6 +13,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'duration_adapter.dart';
 import 'vault.dart';
 import 'image_note.dart';
+import 'video_note.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +22,10 @@ void main() async {
   Hive.registerAdapter(DurationAdapter());
   Hive.registerAdapter(VoiceNoteAdapter());
   Hive.registerAdapter(ImageNoteAdapter());
+  Hive.registerAdapter(VideoNoteAdapter());
   await Hive.openBox<VoiceNote>('voice_notes');
   await Hive.openBox<ImageNote>('image_notes');
+  await Hive.openBox<VideoNote>('video_notes');
   runApp(const MyApp());
 }
 
