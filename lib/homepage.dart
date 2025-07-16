@@ -217,7 +217,7 @@ class _HomePageState extends State<HomePage> {
     _buildHomeContent(),
     const JournalPage(),
     const VaultPasswordPage(),
-    const FavoritePage(),
+    const FavouritesScreen(),
     const SettingsPage(),
   ];
 

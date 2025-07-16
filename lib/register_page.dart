@@ -56,7 +56,11 @@ class _RegisterPageState extends State<RegisterPage> {
           'email': email,
           'name': _nameController.text.trim(),
           'provider': 'email',
-          'favPersonId': null,
+          'comfortPerson': {
+            'relation': null,
+            'name': null,
+            'customRelation': null,
+          },
         });
         showCustomSnackBar(context, 'Registration successful!', icon: Icons.check_circle_outline);
         Navigator.pop(context); // Go back to login
@@ -281,8 +285,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       await FirebaseFirestore.instance.collection('users').doc(username).set({
                         'uid': user.uid,
                         'email': user.email ?? '',
+                        'name': user.displayName ?? '',
                         'provider': 'google',
-                        'favPersonId': null,
+                        'comfortPerson': {
+                          'relation': null,
+                          'name': null,
+                          'customRelation': null,
+                        },
                       });
                       showCustomSnackBar(context, 'Google registration successful!', icon: Icons.check_circle_outline);
                       Navigator.pop(context); // Go back to login or home

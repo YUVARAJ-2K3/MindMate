@@ -15,6 +15,7 @@ import 'vault.dart';
 import 'image_note.dart';
 import 'video_note.dart';
 import 'package:path_provider/path_provider.dart';
+import 'homepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -97,16 +98,34 @@ class _SplashScreenState extends State<SplashScreen> {
         .collection('users')
         .doc(username)
         .get();
-    if (userDoc.exists &&
-        userDoc.data() != null &&
-        userDoc.data()!['name'] != null &&
-        userDoc.data()!['ageGroup'] != null &&
-        userDoc.data()!['phone'] != null &&
-        userDoc.data()!['city'] != null &&
-        userDoc.data()!['country'] != null) {
-      Navigator.pushReplacementNamed(context, '/selectFavPerson');
+    if (userDoc.exists && userDoc.data() != null) {
+      final data = userDoc.data()!;
+      if (data['name'] != null &&
+          data['ageGroup'] != null &&
+          data['phone'] != null &&
+          data['city'] != null &&
+          data['country'] != null) {
+        // Check if comfort person is selected
+        if (data['comfortPerson'] != null && data['comfortPerson']['relation'] != null) {
+          // All details and comfort person are set, go to home
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        } else {
+          // Details are present, but comfort person is not. Go to RegFavPage.
+          Navigator.pushReplacementNamed(context, '/selectFavPerson');
+        }
+      } else {
+        // Basic details are missing, go to EnterDetailsPage
+        Navigator.pushReplacementNamed(context, '/enterDetails');
+      }
     } else {
-      Navigator.pushReplacementNamed(context, '/enterDetails');
+      // User exists in Auth but not Firestore, or other error
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
     }
   }
 
